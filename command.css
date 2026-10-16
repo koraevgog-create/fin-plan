@@ -32,3 +32,16 @@ html[data-theme="light"] .theme-switch{background:#e5eef9;border-color:#cbdced}
 html[data-theme="light"] .theme-switch button{background:transparent;color:#5c7391;border:0}
 html[data-theme="light"] .theme-switch button[aria-pressed="true"]{background:#fff;color:#145ba8;box-shadow:0 2px 7px #2b578c18}
 @media(max-width:680px){.theme-switch button{padding:7px 8px;font-size:11px}.header-actions{gap:7px}}
+
+/* Portfolio extensions */
+.goal{padding:17px;border:1px solid var(--line);border-radius:12px;margin-top:14px}
+.goal form{margin-top:12px}
+.task{justify-content:space-between}
+.task label{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+.task label input{width:auto;margin:0;flex:none}
+.task .tiny{flex:none}
+.card a{color:var(--cyan);overflow-wrap:anywhere}
+#app .tabs{margin:18px 0}
+#app .tabs button.active{border-color:var(--cyan)}
+#app textarea{min-height:160px;margin-bottom:14px}
+@media(max-width:680px){.task{flex-wrap:wrap}.task .tiny{margin-left:25px}.goal{padding:12px}}
