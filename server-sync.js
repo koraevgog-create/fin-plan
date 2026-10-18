@@ -9,7 +9,7 @@
   let revision = null, syncing = false, pending = false, timer = null, lastSaved = null;
   const status = text => { badge.textContent = text; };
   const read = () => { try { return JSON.parse(localStorage.getItem(DATA) || 'null'); } catch { return null; } };
-  const secret = () => sessionStorage.getItem(KEY) || '';
+  const secret = () => localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
   async function request(method, data) {
     const res = await fetch(API, {method, cache:'no-store', headers:{'X-GPRO-Key':secret(), ...(data ? {'Content-Type':'application/json'} : {})}, body:data ? JSON.stringify(data) : undefined});
     const json = await res.json().catch(()=>({}));
@@ -61,7 +61,7 @@
         revision = remote.revision;
         if (local) await save();
       }
-      status('☁ Сервер подключён');
+      status('☁ Сервер подключён · автосохранение включено');
       return true;
     } catch(e) { status('⚠ ' + e.message); return false; }
   }
@@ -70,17 +70,17 @@
     if (header) {
       header.appendChild(badge);
       const button = document.createElement('button');
-      button.textContent = '☁ Синхронизация';
+      button.textContent = '☁ Подключение / обновить';
       button.type = 'button';
       button.onclick = async () => {
-        const key = prompt('Введите ключ администратора GPRO (сохраняется только до закрытия вкладки):', secret());
+        const key = prompt('Первое подключение устройства: введите ключ администратора GPRO (будет сохранён на этом устройстве):', secret());
         if (!key) return;
-        sessionStorage.setItem(KEY, key);
+        localStorage.setItem(KEY, key);
         if (await connect()) location.reload();
       };
       header.appendChild(button);
     }
-    if (!secret()) { status('○ Только этот браузер · нажми «Синхронизация»'); return; }
+    if (!secret()) { status('○ Устройство не подключено · нажми «Подключение» один раз'); return; }
     await connect();
   }};
   Storage.prototype.setItem = function(k,v) {
