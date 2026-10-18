@@ -81,6 +81,7 @@
       header.appendChild(button);
     }
     if (!secret()) { status('○ Устройство не подключено · нажми «Подключение» один раз'); return; }
+    status('☁ Подключаемся к серверу…');
     await connect();
   }};
   Storage.prototype.setItem = function(k,v) {
