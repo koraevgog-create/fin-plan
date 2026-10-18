@@ -82,6 +82,116 @@
     }
     return {value:local,conflicts:[path || '/']};
   }
+
+  // Conflict review never writes to the server until the user confirms.
+  function reviewConflicts(base, local, remote, serverRevision) {
+    const merged = merge3(base, local, remote);
+    if (!merged.conflicts.length) return Promise.resolve(merged.value);
+    return new Promise(resolve => {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'gpro-conflict-overlay';
+      const dialog = document.createElement('section');
+      dialog.className = 'gpro-conflict-dialog';
+      dialog.setAttribute('role','dialog');
+      dialog.setAttribute('aria-modal','true');
+      dialog.setAttribute('aria-label','Разрешение конфликтов синхронизации');
+      const heading = document.createElement('h2');
+      heading.textContent = 'Разрешение конфликтов · ' + merged.conflicts.length;
+      const intro = document.createElement('p');
+      intro.textContent = 'Для каждого различия выбери, какие данные оставить. Пока ты не нажмёшь «Сохранить выбор», сервер не изменится.';
+      dialog.append(heading,intro);
+      const choices = [];
+      for (const path of merged.conflicts) {
+        const segments = path.split('/').filter(Boolean);
+        const get = (obj) => segments.reduce((v,k) => {
+          if (Array.isArray(v)) return v.find(x=>x && String(x.id) === k) ?? ABSENT;
+          return v && v !== ABSENT && Object.hasOwn(v,k) ? v[k] : ABSENT;
+        },obj);
+        const ours = get(local), theirs = get(remote);
+        const item = document.createElement('div');
+        item.className = 'gpro-conflict-item';
+        const label = document.createElement('strong');
+        label.textContent = segments.join(' → ') || 'Общие данные';
+        const choice = document.createElement('select');
+        const a = document.createElement('option'); a.value = 'local'; a.textContent = 'Оставить данные этого устройства';
+        const b = document.createElement('option'); b.value = 'server'; b.textContent = 'Взять данные с сервера';
+        choice.append(a,b);
+        const previews = document.createElement('div');
+        previews.className = 'gpro-conflict-previews';
+        const fmt = value => value === ABSENT ? '(удалено)' : JSON.stringify(value,null,2);
+        for (const [name,value] of [['На устройстве',ours],['На сервере',theirs]]) {
+          const pane = document.createElement('div');
+          const title = document.createElement('b'); title.textContent = name;
+          const pre = document.createElement('pre'); pre.textContent = fmt(value);
+          pane.append(title,pre); previews.append(pane);
+        }
+        item.append(label,choice,previews); dialog.append(item);
+        choices.push({segments,choice,ours,theirs});
+      }
+      const actions = document.createElement('div'); actions.className = 'gpro-conflict-actions';
+      const cancel = document.createElement('button'); cancel.textContent = 'Отмена · сохранить локальную копию';
+      const apply = document.createElement('button'); apply.textContent = 'Сохранить выбор'; apply.className = 'primary';
+      actions.append(cancel,apply); dialog.append(actions); backdrop.append(dialog); document.body.append(backdrop);
+      const close = value => { backdrop.remove(); resolve(value); };
+      cancel.onclick = () => { keepDraft(snapshot()); close(null); };
+      apply.onclick = () => {
+        // Construct a resolution by recursively choosing conflicting leaf paths.
+        const decisions = new Map(choices.map(x=>['/'+x.segments.join('/'),x.choice.value]));
+        function resolveNode(b,l,rr,path='') {
+          if (decisions.has(path)) return decisions.get(path) === 'server' ? rr : l;
+          if (equal(l,rr)) return l;
+          if (equal(l,b)) return rr;
+          if (equal(rr,b)) return l;
+          if (plain(b) && plain(l) && plain(rr)) {
+            const obj = {};
+            for (const k of new Set([...Object.keys(b),...Object.keys(l),...Object.keys(rr)])) {
+              const value = resolveNode(Object.hasOwn(b,k)?b[k]:ABSENT,Object.hasOwn(l,k)?l[k]:ABSENT,Object.hasOwn(rr,k)?rr[k]:ABSENT,path+'/'+k);
+              if (value !== ABSENT) obj[k]=value;
+            }
+            return obj;
+          }
+          if (Array.isArray(b) && Array.isArray(l) && Array.isArray(rr)) {
+            const keyed=[b,l,rr].every(arr=>arr.every(x=>plain(x) && x.id != null));
+            if (keyed) {
+              const mb=new Map(b.map(x=>[String(x.id),x])), ml=new Map(l.map(x=>[String(x.id),x])), mr=new Map(rr.map(x=>[String(x.id),x]));
+              const out=[];
+              for (const id of new Set([...mr.keys(),...ml.keys(),...mb.keys()])) {
+                const v=resolveNode(mb.get(id)??ABSENT,ml.get(id)??ABSENT,mr.get(id)??ABSENT,path+'/'+id);
+                if (v !== ABSENT) out.push(v);
+              }
+              return out;
+            }
+            const prefix=arr=>arr.length>=b.length && b.every((x,i)=>equal(x,arr[i]));
+            if(prefix(l)&&prefix(rr)) return [...b,...rr.slice(b.length),...l.slice(b.length).filter(x=>!rr.slice(b.length).some(y=>equal(x,y)))];
+          }
+          return l;
+        }
+        close(resolveNode(base,local,remote));
+      };
+    });
+  }
+  async function commitReviewed(base, localRaw, remote) {
+    if (!valid(base) || !valid(parse(localRaw)) || !valid(remote.state)) return false;
+    const selected = await reviewConflicts(base,parse(localRaw),remote.state,remote.revision);
+    if (!selected) return false;
+    if (!same(snapshot(),localRaw)) { keepDraft(snapshot()); status('⚠ Пока выбирали, данные изменились · повторите', 'error'); return false; }
+    try {
+      const response=await request('PUT',{revision:remote.revision,state:selected});
+      const raw=JSON.stringify(selected);
+      rawSet.call(localStorage,DATA,raw);
+      rememberServer(raw); lastSaved=raw; revision=response.revision;
+      dirty=false; blocked=false;
+      localStorage.removeItem(DRAFT);
+      window.dispatchEvent(new Event('gpro-draft-changed'));
+      status('☁ Конфликт разрешён · данные сохранены','ok');
+      location.reload();
+      return true;
+    } catch(e) {
+      keepDraft(localRaw);
+      status('⚠ Сервер изменился · повторите разрешение конфликта','error');
+      return false;
+    }
+  }
   async function reconcile() {
     const base = parse(localStorage.getItem(BASE));
     const localRaw = snapshot();
@@ -92,8 +202,7 @@
     const merged = merge3(base,local,latest.state);
     if (merged.conflicts.length) {
       keepDraft(localRaw);
-      status('⚠ Конфликт в ' + merged.conflicts.length + ' полях · требуется ручная проверка', 'error');
-      return false;
+      return await commitReviewed(base,localRaw,latest);
     }
     // Another local edit during the GET means we must retry with a fresh snapshot.
     if (!same(snapshot(),localRaw)) return false;
@@ -182,6 +291,10 @@
             }
           }
         }
+        if (localChanged && base && valid(parse(base))) {
+          keepDraft(local);
+          return await commitReviewed(parse(base),local,remote);
+        }
         // A new device, changed server state or a conflict: never overwrite silently.
         if (localChanged || draftChanged || blocked || (interactive && !base)) {
           const useServer = confirm('Данные на устройстве отличаются от серверных.\n\nOK — скачать резервную копию локальных данных и загрузить серверную версию.\nОтмена — оставить локальные данные без отправки на сервер.\n\nДля безопасного объединения изменений понадобится отдельная проверка.');
@@ -252,6 +365,11 @@
           localStorage.setItem(KEY, key);
         }
         if (dirty && !blocked) { await save(); return; }
+        if (blocked && valid(parse(localStorage.getItem(BASE)))) {
+          try { const remote=await request('GET'); if (await commitReviewed(parse(localStorage.getItem(BASE)),snapshot(),remote)) return; }
+          catch(e) { status('⚠ '+e.message,'error'); }
+          return;
+        }
         if (await connect(true)) location.reload();
       };
       header.appendChild(button);
