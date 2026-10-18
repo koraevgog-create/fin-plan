@@ -17,7 +17,7 @@
   const status = (message, kind = '') => { badge.textContent = message; badge.dataset.status = kind; };
   const valid = value => value && Array.isArray(value.projects);
   const parse = value => { try { return JSON.parse(value || 'null'); } catch { return null; } };
-  const keepDraft = value => { if (value && valid(parse(value))) rawSet.call(localStorage, DRAFT, JSON.stringify({at:new Date().toISOString(),state:parse(value)})); };
+  const keepDraft = value => { if (value && valid(parse(value))) { rawSet.call(localStorage, DRAFT, JSON.stringify({at:new Date().toISOString(),state:parse(value)})); window.dispatchEvent(new Event('gpro-draft-changed')); } };
   function download(value, label = 'local') {
     const state = parse(value);
     if (!valid(state)) return;
@@ -55,7 +55,7 @@
       rememberServer(raw);
       dirty = !same(snapshot(), raw);
       if (dirty) schedule();
-      else { localStorage.removeItem(DRAFT); status('☁ Сохранено на сервере', 'ok'); }
+      else { localStorage.removeItem(DRAFT); window.dispatchEvent(new Event('gpro-draft-changed')); status('☁ Сохранено на сервере', 'ok'); }
     } catch (error) {
       keepDraft(snapshot());
       dirty = true;
@@ -99,7 +99,7 @@
         rawSet.call(localStorage, DATA, remoteRaw);
         lastSaved = remoteRaw;
         rememberServer(remoteRaw);
-        if (!localChanged) localStorage.removeItem(DRAFT);
+        if (!localChanged) { localStorage.removeItem(DRAFT); window.dispatchEvent(new Event('gpro-draft-changed')); }
       } else {
         lastSaved = local;
       }
@@ -129,6 +129,7 @@
           lastSaved = snapshot();
           rememberServer(lastSaved);
           localStorage.removeItem(DRAFT);
+          window.dispatchEvent(new Event('gpro-draft-changed'));
           revision = remote.revision;
           status('☁ Данные обновлены · перезагрузка…', 'ok');
           location.reload();
@@ -153,6 +154,21 @@
         if (await connect(true)) location.reload();
       };
       header.appendChild(button);
+      const recovery = document.createElement('button');
+      recovery.type = 'button';
+      recovery.className = 'sync-recovery';
+      recovery.textContent = '↓ Несохранённая копия';
+      recovery.title = 'Скачать последнюю локальную копию на случай конфликта';
+      recovery.onclick = () => {
+        const entry = parse(localStorage.getItem(DRAFT));
+        if (!entry?.state || !valid(entry.state)) { alert('Локальная копия не найдена.'); return; }
+        download(JSON.stringify(entry.state), 'recovery');
+      };
+      header.appendChild(recovery);
+      const updateRecovery = () => { recovery.hidden = !localStorage.getItem(DRAFT); };
+      updateRecovery();
+      window.addEventListener('storage', updateRecovery);
+      window.addEventListener('gpro-draft-changed', updateRecovery);
     }
     started = true;
     if (!secret()) { status('○ Локальный режим · подключи устройство'); return; }
