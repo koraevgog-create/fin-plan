@@ -45,3 +45,95 @@ html[data-theme="light"] .theme-switch button[aria-pressed="true"]{background:#f
 #app .tabs button.active{border-color:var(--cyan)}
 #app textarea{min-height:160px;margin-bottom:14px}
 @media(max-width:680px){.task{flex-wrap:wrap}.task .tiny{margin-left:25px}.goal{padding:12px}}
+
+
+/* GPRO 2026: refined light theme and responsive workstation */
+html[data-theme="light"] {
+  --bg:#e8eef5;--panel:#f6f9fd;--line:#c9d8e8;--text:#172d46;
+  --muted:#526c87;--cyan:#087eae;--blue:#245fba;
+}
+html[data-theme="light"] body {
+  background:radial-gradient(ellipse at 85% 0%,#c2e0ed 0,transparent 42%),
+             radial-gradient(ellipse at 10% 80%,#d7e4f3 0,transparent 50%),#e8eef5;
+}
+html[data-theme="light"] aside {
+  background:linear-gradient(180deg,#dceaf2,#edf2f8 62%,#e4edf5);
+  border-right:1px solid #bfd2e2;
+}
+html[data-theme="light"] .logo {color:#116c9c}
+html[data-theme="light"] nav button {color:#395876}
+html[data-theme="light"] nav button:hover,
+html[data-theme="light"] nav button.active {
+  background:linear-gradient(100deg,#c7e4f2,#dcecf9);
+  border-color:#9cc5db;color:#134d78;
+}
+html[data-theme="light"] .card {
+  background:linear-gradient(145deg,#f7fafc,#eaf2f9);
+  border:1px solid #c5d8e6;
+  box-shadow:0 9px 28px #35577a14, inset 0 1px #fff;
+}
+html[data-theme="light"] .card:hover {border-color:#a6c9df}
+html[data-theme="light"] .eyebrow {color:#147b9f}
+html[data-theme="light"] .accent,html[data-theme="light"] .road b {color:#0876a9}
+html[data-theme="light"] .pill {background:#d3e9f0;color:#135b7c}
+html[data-theme="light"] button {background:#dbeaf4;color:#174f7d;border-color:#b1cbdf}
+html[data-theme="light"] button:hover {background:#cce3f3}
+html[data-theme="light"] button.primary {background:linear-gradient(110deg,#157aaf,#2b66c2);border-color:#216cb3;color:white}
+html[data-theme="light"] input,html[data-theme="light"] textarea,html[data-theme="light"] select {
+  background:#f7fafc;border-color:#b8cedf;color:#193953;
+}
+html[data-theme="light"] .theme-switch {background:#d5e4ef;border-color:#b9cfdf}
+html[data-theme="light"] .theme-switch button[aria-pressed="true"] {
+  background:#f5fafc;color:#125b83;box-shadow:0 2px 8px #315d7e24;
+}
+.sync-status {font-size:12px;line-height:1.4;max-width:260px;overflow-wrap:anywhere}
+.sync-status[data-status="error"] {color:#ffb28e}
+.sync-status[data-status="ok"] {color:#65ddba}
+.sync-status[data-status="pending"] {color:#b9d8fa}
+html[data-theme="light"] .sync-status[data-status="error"] {color:#a84625}
+html[data-theme="light"] .sync-status[data-status="ok"] {color:#13745d}
+html[data-theme="light"] .sync-status[data-status="pending"] {color:#286b9b}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible {
+  outline:2px solid var(--cyan);outline-offset:3px;
+}
+@media(max-width:1100px) {
+  header {align-items:flex-start;flex-wrap:wrap}
+  .header-actions {flex-wrap:wrap;justify-content:flex-start;min-width:0}
+  .header-actions button {min-height:40px}
+}
+@media(max-width:680px) {
+  body {overflow-x:hidden}
+  aside {position:sticky;top:0;z-index:20;padding:10px 10px 8px;border-bottom:1px solid var(--line)}
+  nav {gap:5px;scrollbar-width:thin;padding-bottom:3px}
+  nav button {min-height:40px;font-size:12px;flex-shrink:0}
+  main {padding:18px 12px 28px}
+  header {display:grid;gap:12px;margin-bottom:20px}
+  header h1 {font-size:clamp(25px,7vw,34px)}
+  .header-actions {display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:7px;width:100%}
+  .header-actions button {padding:9px 10px;font-size:12px}
+  .theme-switch {order:0}
+  #clock {order:1}
+  .sync-status {order:3;flex:1 1 100%;max-width:none;font-size:11px}
+  .sync-button {order:2}
+  #gproBackupNow {order:4}
+  #gproBackupStatus {order:5;max-width:none!important}
+  .grid,.grid.three {grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .card {padding:13px;border-radius:13px}
+  .grid .card h2 {font-size:clamp(17px,4.5vw,24px);overflow-wrap:anywhere}
+  .two {gap:11px}
+  .row {flex-wrap:wrap}
+  .tabs {overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin;padding-bottom:5px}
+  .tabs button {flex-shrink:0}
+  .task {align-items:flex-start;gap:8px}
+  .task label {overflow-wrap:anywhere}
+  table {min-width:480px}
+  .table {max-width:100%;-webkit-overflow-scrolling:touch}
+  input,select,textarea {font-size:16px}
+}
+@media(max-width:380px) {
+  .grid,.grid.three {grid-template-columns:1fr}
+  .theme-switch button {font-size:11px;padding:7px}
+}
+@media(prefers-reduced-motion:reduce) {
+  *,*::before,*::after {scroll-behavior:auto!important;transition-duration:0.01ms!important}
+}
