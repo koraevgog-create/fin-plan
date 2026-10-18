@@ -4,6 +4,7 @@
   const KEY = 'gpro-server-admin-key';
   const API = './api/state.php';
   const DRAFT = 'gpro-command-unsynced-draft';
+  const BASE = 'gpro-command-last-server-state';
   const rawSet = Storage.prototype.setItem;
   const badge = document.createElement('span');
   badge.className = 'sync-status';
@@ -11,6 +12,8 @@
   let revision = null, lastSaved = null, timer = null, busy = false, dirty = false, blocked = false, polling = false, started = false;
   const secret = () => localStorage.getItem(KEY) || sessionStorage.getItem(KEY) || '';
   const snapshot = () => localStorage.getItem(DATA);
+  const rememberServer = value => { if (value) rawSet.call(localStorage, BASE, value); };
+  const same = (a,b) => { try { return JSON.stringify(parse(a)) === JSON.stringify(parse(b)); } catch { return a === b; } };
   const status = (message, kind = '') => { badge.textContent = message; badge.dataset.status = kind; };
   const valid = value => value && Array.isArray(value.projects);
   const parse = value => { try { return JSON.parse(value || 'null'); } catch { return null; } };
@@ -49,7 +52,8 @@
       const response = await request('PUT', {revision,state:parse(raw)});
       revision = response.revision;
       lastSaved = raw;
-      dirty = snapshot() !== raw;
+      rememberServer(raw);
+      dirty = !same(snapshot(), raw);
       if (dirty) schedule();
       else { localStorage.removeItem(DRAFT); status('☁ Сохранено на сервере', 'ok'); }
     } catch (error) {
@@ -72,16 +76,19 @@
       const remote = await request('GET');
       const local = snapshot();
       const remoteRaw = remote.state ? JSON.stringify(remote.state) : null;
+      const base = localStorage.getItem(BASE);
       const unsynced = localStorage.getItem(DRAFT);
-      if (remoteRaw && local && local !== remoteRaw) {
+      const localChanged = !!local && !!base && !same(local, base);
+      const draftChanged = !!unsynced && valid(parse(parse(unsynced)?.state ? JSON.stringify(parse(unsynced).state) : null)) && !!base && !same(JSON.stringify(parse(unsynced).state), base);
+      if (remoteRaw && local && !same(local, remoteRaw)) {
         // A new device, changed server state or a conflict: never overwrite silently.
-        if (interactive || unsynced || blocked) {
+        if (localChanged || draftChanged || blocked || (interactive && !base)) {
           const useServer = confirm('Данные на устройстве отличаются от серверных.\n\nOK — скачать резервную копию локальных данных и загрузить серверную версию.\nОтмена — оставить локальные данные без отправки на сервер.\n\nДля безопасного объединения изменений понадобится отдельная проверка.');
           if (!useServer) { keepDraft(local); pause('Локальные изменения сохранены · требуется решение'); return false; }
           download(local, 'before-server-load');
         } else if (started && !blocked && !dirty) {
-          // Fresh page load: server is authoritative; retain a local recovery draft.
-          keepDraft(local);
+          // Previously synced device or fresh device with seed data: use the server version.
+          if (!base) keepDraft(local);
         } else {
           keepDraft(local);
           pause('Есть локальные изменения · нажми «Синхронизация»');
@@ -91,6 +98,8 @@
       if (remoteRaw) {
         rawSet.call(localStorage, DATA, remoteRaw);
         lastSaved = remoteRaw;
+        rememberServer(remoteRaw);
+        if (!localChanged) localStorage.removeItem(DRAFT);
       } else {
         lastSaved = local;
       }
@@ -118,6 +127,8 @@
         } else if (remote.state && valid(remote.state)) {
           rawSet.call(localStorage, DATA, JSON.stringify(remote.state));
           lastSaved = snapshot();
+          rememberServer(lastSaved);
+          localStorage.removeItem(DRAFT);
           revision = remote.revision;
           status('☁ Данные обновлены · перезагрузка…', 'ok');
           location.reload();
@@ -154,8 +165,8 @@
   }};
   Storage.prototype.setItem = function(k, v) {
     const result = rawSet.apply(this, arguments);
-    if (this === localStorage && k === DATA && v !== lastSaved) {
-      keepDraft(v);
+    if (this === localStorage && k === DATA && !same(v, lastSaved)) {
+      if (revision !== null || localStorage.getItem(BASE)) keepDraft(v);
       if (revision !== null && !blocked) schedule();
     }
     return result;
