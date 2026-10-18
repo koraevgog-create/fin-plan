@@ -72,13 +72,9 @@
         }
         return {value:out,conflicts};
       }
-      // For arrays without IDs, only safely combine independent append operations.
-      const prefix = arr => arr.length >= base.length && base.every((x,i)=>equal(x,arr[i]));
-      if (prefix(local) && prefix(remote)) {
-        const added = remote.slice(base.length);
-        for (const item of local.slice(base.length)) if (!added.some(x=>equal(x,item))) added.push(item);
-        return {value:[...base,...added],conflicts:[]};
-      }
+      // Legacy arrays without IDs cannot be merged safely: identical items may be distinct records.
+      // Require an explicit choice rather than silently dropping duplicates.
+      return {value:local,conflicts:[path || '/']};
     }
     return {value:local,conflicts:[path || '/']};
   }
@@ -161,8 +157,8 @@
               }
               return out;
             }
-            const prefix=arr=>arr.length>=b.length && b.every((x,i)=>equal(x,arr[i]));
-            if(prefix(l)&&prefix(rr)) return [...b,...rr.slice(b.length),...l.slice(b.length).filter(x=>!rr.slice(b.length).some(y=>equal(x,y)))];
+            // No stable IDs: use the explicit conflict decision for the entire array.
+            return l;
           }
           return l;
         }
@@ -266,7 +262,8 @@
       const base = localStorage.getItem(BASE);
       const unsynced = localStorage.getItem(DRAFT);
       const localChanged = !!local && !!base && !same(local, base);
-      const draftChanged = !!unsynced && valid(parse(parse(unsynced)?.state ? JSON.stringify(parse(unsynced).state) : null)) && !!base && !same(JSON.stringify(parse(unsynced).state), base);
+      const draftState = parse(unsynced)?.state;
+      const draftChanged = !!base && valid(draftState) && !same(JSON.stringify(draftState), base);
       if (remoteRaw && local && !same(local, remoteRaw)) {
         if (localChanged && base && valid(parse(base))) {
           const merged = merge3(parse(base),parse(local),remote.state);
