@@ -10,6 +10,9 @@ on:
       - 'command.js'
       - 'portfolio.js'
       - 'backup.js'
+      - 'bootstrap.js'
+      - 'server-sync.js'
+      - 'api/**'
       - '.github/workflows/deploy-beget.yml'
   workflow_dispatch:
 
@@ -50,7 +53,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/gpro-publish"
-          cp index.html command.html command.css command.js portfolio.js backup.js "$RUNNER_TEMP/gpro-publish/"
+          cp index.html command.html command.css command.js portfolio.js backup.js bootstrap.js server-sync.js "$RUNNER_TEMP/gpro-publish/"
+          mkdir -p "$RUNNER_TEMP/gpro-publish/api"
+          cp api/state.php api/.htaccess "$RUNNER_TEMP/gpro-publish/api/"
           cd "$RUNNER_TEMP/gpro-publish"
           # FTP account must be restricted in Beget to the Command Center public_html.
           # Do not turn off TLS certificate verification or use plain FTP.
