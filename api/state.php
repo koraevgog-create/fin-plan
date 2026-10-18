@@ -31,6 +31,16 @@ if (!isset($input['revision']) || !is_int($input['revision'])) fail(400,'Не у
 if ($input['revision'] !== $rev) fail(409,'Данные изменены на другом устройстве. Обновите страницу.');
 $new = json_encode(['revision'=>$rev+1,'state'=>$input['state'],'updated_at'=>gmdate('c')], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 if ($new === false) fail(400,'Ошибка кодирования');
+// Keep previous versions outside the web root before replacing live state.
+if ($raw !== '' && $previous !== null) {
+  $history = $folder . '/history';
+  if (!is_dir($history) && !mkdir($history, 0700, true) && !is_dir($history)) fail(500,'Не удалось создать каталог резервных копий');
+  $backup = $history . '/state-' . str_pad((string)$rev, 10, '0', STR_PAD_LEFT) . '.json';
+  if (!is_file($backup) && file_put_contents($backup, $raw, LOCK_EX) === false) fail(500,'Не удалось создать резервную копию');
+  $copies = glob($history . '/state-*.json') ?: [];
+  sort($copies, SORT_STRING);
+  foreach (array_slice($copies, 0, max(0, count($copies) - 30)) as $expired) @unlink($expired);
+}
 $tmp = tempnam($folder, 'state_');
 if ($tmp === false || file_put_contents($tmp, $new, LOCK_EX) === false || !rename($tmp, $file)) fail(500,'Не удалось сохранить');
 echo json_encode(['revision'=>$rev+1,'ok'=>true]);
