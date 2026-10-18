@@ -34,6 +34,83 @@
     if (!res.ok) { const e = new Error(body.error || 'Ошибка сервера (' + res.status + ')'); e.code = res.status; throw e; }
     return body;
   }
+
+  // Three-way merge: only non-overlapping edits are merged automatically.
+  // Conflicting edits/deletions remain local and require explicit resolution.
+  const ABSENT = Symbol('absent');
+  const equal = (a,b) => a === ABSENT || b === ABSENT ? a === b : JSON.stringify(a) === JSON.stringify(b);
+  const plain = x => x !== null && typeof x === 'object' && !Array.isArray(x);
+  function merge3(base,local,remote,path = '') {
+    if (equal(local,remote)) return {value:local,conflicts:[]};
+    if (equal(local,base)) return {value:remote,conflicts:[]};
+    if (equal(remote,base)) return {value:local,conflicts:[]};
+    if (plain(base) && plain(local) && plain(remote)) {
+      const out = {}, conflicts = [];
+      for (const k of new Set([...Object.keys(base),...Object.keys(local),...Object.keys(remote)])) {
+        const b = Object.hasOwn(base,k) ? base[k] : ABSENT;
+        const l = Object.hasOwn(local,k) ? local[k] : ABSENT;
+        const rr = Object.hasOwn(remote,k) ? remote[k] : ABSENT;
+        const result = merge3(b,l,rr,path + '/' + k);
+        conflicts.push(...result.conflicts);
+        if (result.value !== ABSENT) out[k] = result.value;
+      }
+      return {value:out,conflicts};
+    }
+    if (Array.isArray(base) && Array.isArray(local) && Array.isArray(remote)) {
+      const keyed = [base,local,remote].every(arr => arr.every(item => plain(item) && (typeof item.id === 'string' || typeof item.id === 'number') && item.id !== ''));
+      if (keyed) {
+        const ids = arr => new Set(arr.map(x => String(x.id)));
+        if ([base,local,remote].some(arr => ids(arr).size !== arr.length)) return {value:local,conflicts:[path]};
+        const b = new Map(base.map(x=>[String(x.id),x]));
+        const l = new Map(local.map(x=>[String(x.id),x]));
+        const rr = new Map(remote.map(x=>[String(x.id),x]));
+        const out=[],conflicts=[];
+        for (const id of new Set([...rr.keys(),...l.keys(),...b.keys()])) {
+          const result=merge3(b.get(id) ?? ABSENT,l.get(id) ?? ABSENT,rr.get(id) ?? ABSENT,path + '/' + id);
+          conflicts.push(...result.conflicts);
+          if (result.value !== ABSENT) out.push(result.value);
+        }
+        return {value:out,conflicts};
+      }
+      // For arrays without IDs, only safely combine independent append operations.
+      const prefix = arr => arr.length >= base.length && base.every((x,i)=>equal(x,arr[i]));
+      if (prefix(local) && prefix(remote)) {
+        const added = remote.slice(base.length);
+        for (const item of local.slice(base.length)) if (!added.some(x=>equal(x,item))) added.push(item);
+        return {value:[...base,...added],conflicts:[]};
+      }
+    }
+    return {value:local,conflicts:[path || '/']};
+  }
+  async function reconcile() {
+    const base = parse(localStorage.getItem(BASE));
+    const localRaw = snapshot();
+    const local = parse(localRaw);
+    if (!valid(base) || !valid(local)) return false;
+    const latest = await request('GET');
+    if (!valid(latest.state)) return false;
+    const merged = merge3(base,local,latest.state);
+    if (merged.conflicts.length) {
+      keepDraft(localRaw);
+      status('⚠ Конфликт в ' + merged.conflicts.length + ' полях · требуется ручная проверка', 'error');
+      return false;
+    }
+    // Another local edit during the GET means we must retry with a fresh snapshot.
+    if (!same(snapshot(),localRaw)) return false;
+    const result = await request('PUT',{revision:latest.revision,state:merged.value});
+    const mergedRaw = JSON.stringify(merged.value);
+    revision = result.revision;
+    rememberServer(mergedRaw);
+    lastSaved = mergedRaw;
+    rawSet.call(localStorage,DATA,mergedRaw);
+    dirty = false;
+    blocked = false;
+    localStorage.removeItem(DRAFT);
+    window.dispatchEvent(new Event('gpro-draft-changed'));
+    status('☁ Изменения объединены и сохранены', 'ok');
+    location.reload();
+    return true;
+  }
   const pause = (message) => { blocked = true; revision = null; status('⚠ ' + message, 'error'); };
   function schedule() {
     if (!secret() || blocked) return;
@@ -60,7 +137,8 @@
       keepDraft(snapshot());
       dirty = true;
       if (error.code === 409) {
-        pause('Конфликт версий · нажми «Синхронизация»');
+        try { if (await reconcile()) return; } catch (_) { /* keep the local draft */ }
+        pause('Конфликт версий · локальная копия сохранена');
       } else if (error.code === 403) {
         pause('Неверный ключ · переподключись');
       } else {
@@ -81,6 +159,29 @@
       const localChanged = !!local && !!base && !same(local, base);
       const draftChanged = !!unsynced && valid(parse(parse(unsynced)?.state ? JSON.stringify(parse(unsynced).state) : null)) && !!base && !same(JSON.stringify(parse(unsynced).state), base);
       if (remoteRaw && local && !same(local, remoteRaw)) {
+        if (localChanged && base && valid(parse(base))) {
+          const merged = merge3(parse(base),parse(local),remote.state);
+          if (!merged.conflicts.length) {
+            // A safe merge will be committed with the server's current revision.
+            try {
+              const response = await request('PUT',{revision:remote.revision,state:merged.value});
+              const mergedRaw = JSON.stringify(merged.value);
+              rawSet.call(localStorage,DATA,mergedRaw);
+              rememberServer(mergedRaw);
+              lastSaved = mergedRaw;
+              revision = response.revision;
+              blocked = false; dirty = false;
+              localStorage.removeItem(DRAFT);
+              window.dispatchEvent(new Event('gpro-draft-changed'));
+              status('☁ Изменения объединены и сохранены', 'ok');
+              return true;
+            } catch (error) {
+              keepDraft(local);
+              pause('Не удалось объединить · локальная копия сохранена');
+              return false;
+            }
+          }
+        }
         // A new device, changed server state or a conflict: never overwrite silently.
         if (localChanged || draftChanged || blocked || (interactive && !base)) {
           const useServer = confirm('Данные на устройстве отличаются от серверных.\n\nOK — скачать резервную копию локальных данных и загрузить серверную версию.\nОтмена — оставить локальные данные без отправки на сервер.\n\nДля безопасного объединения изменений понадобится отдельная проверка.');
