@@ -1,5 +1,5 @@
 // GPRO Command Center: load the current dashboard module without stale browser cache.
-const BUILD = '20261019-3';
+const BUILD = '20261019-4';
 try {
   if (location.hostname.endsWith('.beget.tech') && window.gproServerSync) {
     await window.gproServerSync.start();
