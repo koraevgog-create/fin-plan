@@ -1,15 +1,34 @@
 
 // New dashboard owns rendering; legacy command.js must not run alongside it.
 const K='gpro-command-center',money=n=>(Number(n)||0).toLocaleString('ru-RU')+' ₽',esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-const departments=[['rental','Аренда и прокат','◈','Оборудование, инвентарь, техника и комплекты'],['services','Услуги','⌘','Навыки, сервис, работа и посредничество'],['sales','Продажи','◇','Товары, перепродажа, производство и поставки']];
+const departments=[['rental','Аренда и прокат','◈','Оборудование, инвентарь, техника и комплекты'],['services','Услуги','⌘','Навыки, сервис, работа и посредничество'],['sales','Продажи','◇','Товары, перепродажа, производство и поставки'],['blogging','Блогинг и цифровые продукты','✦','Контент, аудитория, воронки, инфопродукты и курсы']];
 const initialGroups={'JBL / Event':'rental','SUP':'rental','Перепродажа':'sales','Тюбинги':'rental','Моющая техника':'rental','Коптильня':'sales','Чип-тюнинг':'services','Строительный прокат':'rental','B2B поставки':'sales'};
 const extras=[['Палатки и кемпинговый инвентарь','rental','idea'],['Проекторы и экраны','rental','idea'],['Роботы-мойщики окон','rental','idea']];
+const newIncomeProjects=[
+['Блог GPRO / инфопродукты','blogging','Контент и цифровые продукты','test','Reels → Telegram → покупка. Развитие аудитории, воронка, собственные инфопродукты и курсы.'],
+['Ремонт компьютеров','services','Ремонт и техническая помощь','idea','Диагностика, настройка и ремонт ПК и ноутбуков.'],
+['Укладка плитки','services','Отделочные работы','test','Тест спроса на услуги плиточника: санузлы, кухни и другие помещения.'],
+['Ремонт под ключ','services','Ремонт помещений','test','Тест спроса на комплексный ремонт квартир и помещений.'],
+['Бизнес-планы и социальный контракт','services','Консультации и документы','idea','Подготовка бизнес-планов и сопровождение заявок на социальный контракт в рамках законных требований.'],
+['Упаковка социальных сетей','services','Маркетинг и дизайн','idea','Оформление и позиционирование аккаунтов, визуальная упаковка, контент-структура.'],
+['Создание сайтов','services','Веб-разработка','idea','Разработка и запуск сайтов для малого бизнеса и частных специалистов.'],
+['Продажа автомобилей','sales','Автомобили','idea','Поиск покупателей, продажа автомобилей и сопровождение сделок.'],
+['Подбор автомобилей','services','Автоподбор','idea','Подбор автомобилей под запрос клиента и проверка вариантов перед покупкой.']
+];
+function addIncomeProjectsOnce(){
+  if(state.incomeProjects20261020)return;
+  for(const [name,department,category,status,notes] of newIncomeProjects){
+    if(state.projects.some(p=>p.name.toLocaleLowerCase('ru')===name.toLocaleLowerCase('ru')))continue;
+    state.projects.push({id:'p'+id(),name,category,department,priority:'queue',status,plan:0,invested:0,revenue:0,cost:0,fixedCost:0,oneOffs:[],strategy:'',notes,tasks:[],goals:[],resources:[]});
+  }
+  state.incomeProjects20261020=true;
+}
 let state,screen='overview',department='all',current=null,section='overview';
 let projectQuery='',projectStatus='all',projectSort='priority',taskQuery='',taskStatus='open',taskPeriod='all';
 function read(){try{return JSON.parse(localStorage.getItem(K))}catch{return null}}
 let lastSerialized = null;
 function store(){const next=JSON.stringify(state);if(next===lastSerialized)return;lastSerialized=next;localStorage.setItem(K,next)}
-function normalize(){state=read();if(!state||!Array.isArray(state.projects))return false;lastSerialized=JSON.stringify(state);state.projects.forEach(p=>{p.department??=initialGroups[p.name]||'sales';p.priority??='queue';p.tasks??=[];p.tasks.forEach(t=>t.id??=id());p.strategy??='';p.notes??='';p.fixedCost??=0;p.oneOffs??=[];p.goals??=[];p.resources??=[];p.invested??=0;p.revenue??=0;p.cost??=0});for(const [name,group,status] of extras)if(!state.projects.some(p=>p.name===name))state.projects.push({id:'p'+id(),name,category:'Идея',department:group,priority:'queue',status,plan:0,invested:0,revenue:0,cost:0,fixedCost:0,oneOffs:[],strategy:'',notes:'',tasks:[],goals:[],resources:[]});state.tasks??=[];state.tasks.forEach(t=>t.id??=id());store();return true}
+function normalize(){state=read();if(!state||!Array.isArray(state.projects))return false;lastSerialized=JSON.stringify(state);state.projects.forEach(p=>{p.department??=initialGroups[p.name]||'sales';p.priority??='queue';p.tasks??=[];p.tasks.forEach(t=>t.id??=id());p.strategy??='';p.notes??='';p.fixedCost??=0;p.oneOffs??=[];p.goals??=[];p.resources??=[];p.invested??=0;p.revenue??=0;p.cost??=0});for(const [name,group,status] of extras)if(!state.projects.some(p=>p.name===name))state.projects.push({id:'p'+id(),name,category:'Идея',department:group,priority:'queue',status,plan:0,invested:0,revenue:0,cost:0,fixedCost:0,oneOffs:[],strategy:'',notes:'',tasks:[],goals:[],resources:[]});state.tasks??=[];state.tasks.forEach(t=>t.id??=id());addIncomeProjectsOnce();store();return true}
 function button(label,action,cl=''){return '<button data-action="'+action+'" class="'+cl+'">'+label+'</button>'}
 function panel(html){return '<article class="card">'+html+'</article>'}
 function numberField(name,label,value){return '<label class="field">'+label+'<input type="number" min="0" data-number="'+name+'" value="'+(Number(value)||0)+'"></label>'}
