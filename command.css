@@ -154,3 +154,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .gpro-filterbar label:first-child{flex:2 1 250px}
 .gpro-filterbar input,.gpro-filterbar select{width:100%;min-width:0;box-sizing:border-box}
 @media(max-width:650px){.gpro-filterbar{gap:10px;padding:10px}.gpro-filterbar label{flex:1 1 140px}.gpro-filterbar label:first-child{flex:1 1 100%}}
+
+/* Task planner controls */
+.gpro-task-item{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.gpro-task-item>label{flex:1 1 220px;min-width:0}
+.gpro-task-meta{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.gpro-task-meta select,.gpro-task-meta input[type=date]{width:auto;max-width:155px;min-width:110px;padding:7px;font-size:12px}
+.gpro-overdue{color:#e35d5d;font-weight:700;font-size:12px}
+@media(max-width:650px){.gpro-task-meta{width:100%;justify-content:flex-start}.gpro-task-meta select,.gpro-task-meta input[type=date]{flex:1 1 125px}}
