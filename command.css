@@ -162,3 +162,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .gpro-task-meta select,.gpro-task-meta input[type=date]{width:auto;max-width:155px;min-width:110px;padding:7px;font-size:12px}
 .gpro-overdue{color:#e35d5d;font-weight:700;font-size:12px}
 @media(max-width:650px){.gpro-task-meta{width:100%;justify-content:flex-start}.gpro-task-meta select,.gpro-task-meta input[type=date]{flex:1 1 125px}}
+
+/* Quick task entry */
+.gpro-quicktask{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:10px}
+.gpro-quicktask label{display:flex;flex-direction:column;gap:5px;font-size:12px;min-width:0}
+.gpro-quicktask input,.gpro-quicktask select{width:100%;min-width:0;box-sizing:border-box}
+@media(max-width:700px){.gpro-quicktask{grid-template-columns:1fr 1fr}.gpro-quicktask label:first-child{grid-column:1/-1}}
