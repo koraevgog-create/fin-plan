@@ -219,6 +219,7 @@
   const pause = (message) => { blocked = true; revision = null; status('⚠ ' + message, 'error'); };
   function schedule() {
     if (!secret() || blocked) return;
+    if (same(snapshot(), lastSaved)) { dirty = false; clearTimeout(timer); status('☁ Сохранено на сервере', 'ok'); return; }
     dirty = true;
     status(navigator.onLine ? '◌ Есть несохранённые изменения' : '⚠ Нет интернета · изменения на устройстве', 'pending');
     clearTimeout(timer);
@@ -228,6 +229,7 @@
     if (busy || blocked || revision === null || !secret() || !dirty) return;
     const raw = snapshot();
     if (!valid(parse(raw))) return;
+    if (same(raw,lastSaved)) { dirty=false; status('☁ Сохранено на сервере','ok'); return; }
     busy = true;
     status('☁ Сохраняем…', 'pending');
     try {
@@ -332,11 +334,19 @@
       const remote = await request('GET');
       if (remote.revision !== revision) {
         const current = snapshot();
-        if (current !== lastSaved) {
+        if (!same(current,lastSaved)) {
           keepDraft(current);
           pause('Новые данные на сервере · проверь изменения');
         } else if (remote.state && valid(remote.state)) {
-          rawSet.call(localStorage, DATA, JSON.stringify(remote.state));
+          const updatedRaw=JSON.stringify(remote.state);
+          if (same(current,updatedRaw)) {
+            revision=remote.revision;
+            lastSaved=updatedRaw;
+            rememberServer(updatedRaw);
+            status('☁ Данные актуальны','ok');
+            return;
+          }
+          rawSet.call(localStorage, DATA, updatedRaw);
           lastSaved = snapshot();
           rememberServer(lastSaved);
           localStorage.removeItem(DRAFT);
