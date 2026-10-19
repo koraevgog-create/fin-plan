@@ -168,3 +168,19 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .gpro-quicktask label{display:flex;flex-direction:column;gap:5px;font-size:12px;min-width:0}
 .gpro-quicktask input,.gpro-quicktask select{width:100%;min-width:0;box-sizing:border-box}
 @media(max-width:700px){.gpro-quicktask{grid-template-columns:1fr 1fr}.gpro-quicktask label:first-child{grid-column:1/-1}}
+
+/* Planner layout refinements */
+.gpro-task-create{margin:14px 0 18px}
+.gpro-task-create>.card{max-width:none}
+.gpro-task-create .stack{display:grid;gap:12px}
+.gpro-task-create h3{margin:0 0 14px}
+.gpro-task-create .stack>button{justify-self:start;min-width:180px}
+.gpro-task-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;min-height:52px}
+.gpro-task-title{display:flex;align-items:center;gap:9px;min-width:0;text-align:left;line-height:1.45;overflow-wrap:anywhere}
+.gpro-task-title input{flex:none}
+.gpro-task-meta{display:flex;gap:8px;align-items:center;justify-content:flex-end;min-width:0}
+.gpro-task-meta>.tiny{max-width:145px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gpro-delete-task{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:34px;padding:5px 9px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--text);opacity:.7;cursor:pointer}
+.gpro-delete-task:hover,.gpro-delete-task:focus-visible{opacity:1;color:#f78d8d;border-color:#f78d8d}
+@media(max-width:850px){.gpro-task-item{grid-template-columns:1fr}.gpro-task-meta{justify-content:flex-start;padding-left:24px;flex-wrap:wrap}.gpro-task-meta>.tiny{max-width:100%}}
+@media(max-width:550px){.gpro-task-create .stack>button{width:100%}.gpro-task-meta{padding-left:0}.gpro-task-meta select,.gpro-task-meta input[type=date]{flex:1 1 110px;min-width:0;max-width:none}.gpro-delete-task{margin-left:auto}}
