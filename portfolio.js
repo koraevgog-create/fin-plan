@@ -1,5 +1,5 @@
 
-import './command.js';
+// New dashboard owns rendering; legacy command.js must not run alongside it.
 const K='gpro-command-center',money=n=>(Number(n)||0).toLocaleString('ru-RU')+' ₽',esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const departments=[['rental','Аренда и прокат','◈','Оборудование, инвентарь, техника и комплекты'],['services','Услуги','⌘','Навыки, сервис, работа и посредничество'],['sales','Продажи','◇','Товары, перепродажа, производство и поставки']];
 const initialGroups={'JBL / Event':'rental','SUP':'rental','Перепродажа':'sales','Тюбинги':'rental','Моющая техника':'rental','Коптильня':'sales','Чип-тюнинг':'services','Строительный прокат':'rental','B2B поставки':'sales'};
@@ -42,4 +42,12 @@ function normalizeImported(){state.tasks??=[];state.tasks.forEach(t=>t.id??=id()
 function sum(){let el=document.getElementById('scenarioSum');if(el){let n=state.projects.reduce((a,p)=>a+(Number(p.plan)||0),0);el.textContent='Суммарный сценарий: '+money(n)+' · До цели: '+money(Math.max(0,(state.finance.target||0)-n))}}
 function action(a){let p=state.projects.find(x=>x.id===current),[cmd,arg]=a.split(':');if(cmd==='dept'){department=arg;screen='projects'}else if(cmd==='open'){current=arg;section='overview';screen='detail'}else if(cmd==='tab'){section=arg}else if(cmd==='back'){screen='projects'}else if(cmd==='favorite'){let x=state.projects.find(p=>p.id===arg);if(x.priority==='main')x.priority='queue';else if(state.projects.filter(p=>p.priority==='main').length<3)x.priority='main';else alert('Основных проектов может быть не больше трёх.')}else if(cmd==='gotoTasks'){screen='tasks';taskStatus='open';taskPeriod='all'}else if(cmd==='new'){let name=prompt('Название проекта');if(!name?.trim())return;let x={id:'p'+id(),name:name.trim(),category:'Новый проект',department:department==='all'?'services':department,priority:'queue',status:'idea',plan:0,invested:0,revenue:0,cost:0,fixedCost:0,oneOffs:[],strategy:'',notes:'',tasks:[],goals:[],resources:[]};state.projects.push(x);current=x.id;screen='detail';section='overview'}else if(cmd==='saveText'){p[section==='strategy'?'strategy':'notes']=document.getElementById('projectText').value}else if(cmd==='saveGlobalStrategy'){state.strategy=document.getElementById('globalStrategy').value}else if(cmd==='removeTask'){p.tasks=p.tasks.filter(t=>t.id!==arg)}else if(cmd==='removeGoal'){p.goals=p.goals.filter(t=>t.id!==arg)}else if(cmd==='removeCost'){p.oneOffs=p.oneOffs.filter(t=>t.id!==arg)}else if(cmd==='removeResource'){p.resources=p.resources.filter(t=>t.id!==arg)}else if(cmd==='export'){let a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.href=url;a.download='gpro-command-backup.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}store();render()}
 function go(v){screen=v;render();window.scrollTo(0,0)}
-if(normalize()){document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));render()}
+if(normalize()){
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.view));
+const applyTheme=value=>{const theme=value==='light'?'light':'dark';document.documentElement.dataset.theme=theme;document.querySelectorAll('[data-theme-choice]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.themeChoice===theme)));const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=theme==='light'?'#f1f5fc':'#080e1b';localStorage.setItem('gpro-ui-theme',theme)};
+document.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeChoice));
+applyTheme(document.documentElement.dataset.theme);
+document.getElementById('export').onclick=()=>action('export');
+const clock=document.getElementById('clock');if(clock)clock.textContent=new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+render();
+}
