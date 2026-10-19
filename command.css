@@ -214,3 +214,39 @@ input:disabled,select:disabled,button:disabled{cursor:not-allowed}
 @media(min-width:681px) and (max-width:1250px){header{flex-wrap:wrap}.header-actions{justify-content:flex-start}}
 @media(max-width:680px){header>div:first-child{width:100%}.header-actions{gap:6px}.header-actions button{min-height:38px}.grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}.gpro-task-item{gap:7px}}
 @media(max-width:430px){.grid.three{grid-template-columns:1fr}.gpro-filterbar label{flex:1 1 100%}}
+
+/* Stage 1 · coherent visual design. Presentation only; no storage or API changes. */
+:root{--gpro-focus:#64c9ff;--gpro-shadow:0 12px 30px rgba(0,0,0,.11)}
+html{scroll-behavior:smooth}
+body{font-size:14px;line-height:1.5}
+main{padding:28px clamp(16px,2.3vw,38px) 24px}
+header{margin-bottom:24px}
+header h1{max-width:100%;font-size:clamp(26px,2.2vw,36px);letter-spacing:-.025em}
+header #subtitle{margin:5px 0 0;font-size:12px}
+.eyebrow{font-weight:700;letter-spacing:1.6px}
+.card{box-shadow:var(--gpro-shadow);padding:clamp(15px,1.35vw,21px)}
+#app h2{margin:23px 0 13px;font-size:clamp(17px,1.5vw,21px);line-height:1.3}
+#app h3{margin:7px 0 12px}
+#app .card>h2:first-child,#app .card>h3:first-child{margin-top:0}
+#app .grid{gap:13px}
+#app .two{gap:13px}
+nav button{transition:background .15s ease,border-color .15s ease,color .15s ease}
+nav button.active{font-weight:650}
+button{transition:background .15s ease,border-color .15s ease}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,nav button:focus-visible{outline:2px solid var(--gpro-focus);outline-offset:2px}
+input,select,textarea{max-width:100%}
+input[type="date"]{min-width:0}
+.gpro-task-title{font-weight:500}
+.gpro-task-item{min-height:48px}
+.gpro-task-item .gpro-task-meta{gap:7px}
+.gpro-task-item .gpro-task-meta select,.gpro-task-item .gpro-task-meta input[type="date"]{margin-top:0}
+.gpro-task-item .gpro-task-meta>.tiny{max-width:170px}
+.gpro-delete-task{transition:opacity .15s ease,border-color .15s ease}
+footer{padding:35px 0 12px}
+html[data-theme="light"] .card{box-shadow:0 8px 25px rgba(27,54,93,.055)}
+html[data-theme="light"] .gpro-filterbar{background:#f8fbff}
+@media(min-width:1101px){header>div:first-child{flex:0 1 340px}.header-actions{flex-wrap:wrap;row-gap:7px}#clock{white-space:nowrap}}
+@media(max-width:1000px){main{padding:22px 16px}.header-actions{flex-wrap:wrap}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){main{padding:16px 12px 22px}header{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:18px}.header-actions{flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap}.header-actions>*{flex:0 1 auto}header h1{font-size:28px}nav{gap:5px;scrollbar-width:thin}nav button{padding:10px 12px}.card{padding:15px}.grid{gap:9px}.gpro-task-meta{padding-left:0}.gpro-task-meta>.tiny{width:100%;max-width:none}}
+@media(max-width:430px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grid .card{padding:12px}.grid .card h2{font-size:17px}.header-actions button{padding:9px 10px}.gpro-quicktask{grid-template-columns:1fr}.gpro-quicktask label:first-child{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}nav button,button,.gpro-delete-task{transition:none}}
