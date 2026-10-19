@@ -1,5 +1,5 @@
 // GPRO Command Center: load the current dashboard module without stale browser cache.
-const BUILD = '20261019-2';
+const BUILD = '20261019-3';
 try {
   if (location.hostname.endsWith('.beget.tech') && window.gproServerSync) {
     await window.gproServerSync.start();
@@ -8,5 +8,5 @@ try {
 } catch (error) {
   console.error('GPRO dashboard startup failed', error);
   const app = document.getElementById('app');
-  if (app) app.innerHTML = '<article class="card"><h2>Не удалось загрузить новую версию штаба</h2><p>Обнови страницу сочетанием Ctrl + Shift + R. Если ошибка повторится, пришли скриншот консоли браузера (F12 → Console).</p></article>';
+  if (app) { const card=document.createElement('article');card.className='card';const h=document.createElement('h2');h.textContent='Ошибка загрузки планировщика';const p=document.createElement('p');p.textContent=String(error?.message||error);card.append(h,p);app.replaceChildren(card); }
 }
