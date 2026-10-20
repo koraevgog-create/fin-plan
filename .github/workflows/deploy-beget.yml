@@ -80,4 +80,4 @@ jobs:
           cmp portfolio.js /tmp/gpro-remote-portfolio.js
           cmp bootstrap.js /tmp/gpro-remote-bootstrap.js
           cmp index.html /tmp/gpro-remote-index.html
-          echo "Critical deployed files match GitHub build byte for byte."\n
+          echo "Critical deployed files match GitHub build byte for byte."
