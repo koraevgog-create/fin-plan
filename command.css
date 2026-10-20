@@ -373,3 +373,17 @@ html[data-theme="light"] #app .empty{background:#f8fbff}
 .gpro-detail-actions{margin-bottom:14px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(max-width:680px){.gpro-bulkbar{padding:10px;gap:6px}.gpro-bulkbar>span{flex:1 0 100%}.gpro-bulkbar button{flex:1 1 auto}.gpro-project-actions button{min-height:40px}}
+
+/* Stage 3 planner: task edit and seven-day calendar */
+.gpro-task-edit{min-width:34px;min-height:34px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--text);cursor:pointer}
+.gpro-task-edit:hover{border-color:var(--cyan);color:var(--cyan)}
+.gpro-task-description{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:3px;overflow-wrap:anywhere}
+.gpro-task-views{margin:15px 0 4px}
+.gpro-week-grid{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:10px;overflow-x:auto;padding:3px 1px 15px}
+.gpro-week-day{padding:12px;min-height:190px;display:flex;flex-direction:column;gap:8px}
+.gpro-week-day h3{font-size:13px;margin:0 0 5px}
+.gpro-week-entry{font-size:12px;line-height:1.4;border-left:3px solid var(--cyan);padding:7px 8px;background:color-mix(in srgb,var(--cyan) 7%,transparent);border-radius:5px;overflow-wrap:anywhere}
+.gpro-week-entry small{display:block;color:var(--muted);margin-top:4px}
+.gpro-week-day button{margin-top:auto;min-height:36px;font-size:12px}
+@media(max-width:1000px){.gpro-week-grid{grid-template-columns:repeat(7,minmax(180px,1fr))}}
+@media(max-width:680px){.gpro-week-grid{grid-template-columns:repeat(7,minmax(190px,1fr))}.gpro-task-meta select{max-width:100%}}
