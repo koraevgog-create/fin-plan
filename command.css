@@ -326,3 +326,37 @@ html[data-theme="light"] #app :is(input:not([type="checkbox"]),select,textarea):
 html[data-theme="light"] #app th{background:#f5f9fe}
 @media(max-width:680px){#app .formgrid{grid-template-columns:1fr}#app .gpro-filterbar{padding:11px}#app .table{margin-inline:0}#app th,#app td{padding:10px 11px}#app button{min-height:42px}}
 @media(prefers-reduced-motion:reduce){#app :is(input:not([type="checkbox"]),select,textarea){transition:none}}
+
+/* Stage 1.4 — final visual consistency, contrast and compact layouts */
+#app .project{position:relative;min-height:215px}
+#app .project>.row:first-child{align-items:flex-start}
+#app .project h3{font-size:17px;line-height:1.35;letter-spacing:-.01em}
+#app .project .accent{font-variant-numeric:tabular-nums}
+#app .project .row:last-child{gap:8px;flex-wrap:wrap}
+#app .project .row:last-child button:first-child{flex:1 1 auto}
+#app .project .row:last-child button:last-child{flex:0 0 auto}
+#app .grid.three>.card:not(.project){display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+#app .grid.three>.card:not(.project) h2{margin:4px 0;font-size:clamp(17px,1.6vw,22px)}
+#app .grid.three>.card:not(.project) h3{margin:5px 0}
+#app .grid.three>.card:not(.project) button{margin-top:auto}
+#app .two>.card{min-width:0}
+#app .task{min-width:0}
+#app .task label{overflow-wrap:anywhere}
+#app .task .tiny{line-height:1.5}
+#app .road{min-width:0}
+#app .road>div{min-width:0}
+#app .road p{overflow-wrap:anywhere}
+#app .gpro-filterbar{align-items:end}
+#app .gpro-filterbar label{color:var(--muted);font-size:12px;font-weight:600}
+#app .gpro-filterbar :is(input,select){color:var(--text);font-weight:400}
+#app .empty{background:color-mix(in srgb,var(--panel) 65%,transparent)}
+#app .pill{white-space:normal;overflow-wrap:anywhere}
+#app .card :is(h2,h3,p){overflow-wrap:break-word}
+#app :is(button,input,select,textarea){font-size:inherit}
+#app button:disabled{opacity:.55}
+#app button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+html[data-theme="light"] #app .empty{background:#f8fbff}
+@media(min-width:1200px){#app .grid.three{gap:15px}}
+@media(max-width:1000px){#app .project{min-height:0}}
+@media(max-width:680px){#app .grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}#app .grid.three>.card:not(.project){gap:5px}#app .project .row:last-child button{min-height:40px}#app .task{flex-wrap:wrap}}
+@media(max-width:500px){#app .grid.three{grid-template-columns:1fr}#app .project .row:last-child button:first-child{flex:1 1 70%}#app .gpro-filterbar label{flex-basis:100%}}
