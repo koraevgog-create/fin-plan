@@ -32,52 +32,71 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check configuration
-        id: config
-        shell: bash
-        run: |
-          if [[ -z "$FTP_HOST" || -z "$FTP_USER" || -z "$FTP_PASSWORD" ]]; then
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::error::Beget FTP secrets are missing. Deployment cannot be verified."\n            exit 1
-          else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Install FTPS client
-        if: steps.config.outputs.ready == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y lftp
-
-      - name: Publish frontend via verified FTPS
-        if: steps.config.outputs.ready == 'true'
+      - name: Check FTPS configuration
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/gpro-publish"
+          if [[ -z "$FTP_HOST" || -z "$FTP_USER" || -z "$FTP_PASSWORD" ]]; then
+            echo "::error::Beget FTP secrets are missing; deployment was NOT performed."
+            exit 1
+          fi
+
+      - name: Install FTPS client
+        run: sudo apt-get update -qq && sudo apt-get install -y lftp
+
+      - name: Upload, verify and promote without deleting live files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gpro-publish/api" "$RUNNER_TEMP/gpro-verify/api"
           cp index.html command.html command.css command.js portfolio.js backup.js bootstrap.js server-sync.js "$RUNNER_TEMP/gpro-publish/"
-          mkdir -p "$RUNNER_TEMP/gpro-publish/api"
           cp api/state.php api/.htaccess "$RUNNER_TEMP/gpro-publish/api/"
           cd "$RUNNER_TEMP/gpro-publish"
-          # FTP account must be restricted in Beget to the Command Center public_html.
-          # Do not turn off TLS certificate verification or use plain FTP.
-          lftp -u "$FTP_USER","$FTP_PASSWORD" "ftp://$FTP_HOST" <<'LFTP'
-          set cmd:fail-exit yes
-          set ftp:ssl-force yes
-          set ftp:ssl-protect-data yes
-          set ssl:verify-certificate yes
-          set net:max-retries 2
-          set net:timeout 20
-          # Force a consistent release: stale FTP timestamps must not skip unchanged JS modules.
-          mirror --reverse --verbose --transfer-all --no-perms --parallel=2 ./ .
-          # Verify the entry module is present before reporting success.
-          cls -l portfolio.js
-          cls -l bootstrap.js
-          cls -l index.html
-          get portfolio.js -o /tmp/gpro-remote-portfolio.js
-          get bootstrap.js -o /tmp/gpro-remote-bootstrap.js
-          get index.html -o /tmp/gpro-remote-index.html
-          bye
-          LFTP
-          cmp portfolio.js /tmp/gpro-remote-portfolio.js
-          cmp bootstrap.js /tmp/gpro-remote-bootstrap.js
-          cmp index.html /tmp/gpro-remote-index.html
-          echo "Critical deployed files match GitHub build byte for byte."
+
+          # No mirror and no removal of existing files. The FTP user must be
+          # restricted to this site's public_html; state storage is not touched.
+          files=(command.css command.js backup.js server-sync.js command.html portfolio.js bootstrap.js index.html api/.htaccess api/state.php)
+          {
+            echo 'set cmd:fail-exit yes'
+            echo 'set ftp:ssl-force yes'
+            echo 'set ftp:ssl-protect-data yes'
+            echo 'set ssl:verify-certificate yes'
+            echo 'set net:max-retries 5'
+            echo 'set net:reconnect-interval-base 3'
+            echo 'set net:timeout 45'
+            echo 'set xfer:clobber yes'
+            echo 'mkdir -f api'
+            # First upload ALL files to temporary names, never removing live files.
+            for f in "${files[@]}"; do
+              printf 'put -c "%s" -o "%s.gpro-upload"\n' "$f" "$f"
+            done
+            # Download and verify the staged files before replacing live files.
+            for f in "${files[@]}"; do
+              printf 'get "%s.gpro-upload" -o "%s"\n' "$f" "$RUNNER_TEMP/gpro-verify/$f"
+            done
+            echo 'bye'
+          } > "$RUNNER_TEMP/gpro-stage.lftp"
+
+          lftp -u "$FTP_USER","$FTP_PASSWORD" "ftp://$FTP_HOST" -f "$RUNNER_TEMP/gpro-stage.lftp"
+          for f in "${files[@]}"; do
+            cmp "$f" "$RUNNER_TEMP/gpro-verify/$f"
+          done
+          echo "All staged files verified byte-for-byte."
+
+          # Promote the entry point LAST so clients never load a new HTML file
+          # while the corresponding JavaScript has not yet been uploaded.
+          {
+            echo 'set cmd:fail-exit yes'
+            echo 'set ftp:ssl-force yes'
+            echo 'set ftp:ssl-protect-data yes'
+            echo 'set ssl:verify-certificate yes'
+            echo 'set net:max-retries 5'
+            echo 'set net:reconnect-interval-base 3'
+            echo 'set net:timeout 45'
+            for f in "${files[@]}"; do
+              printf 'mv "%s.gpro-upload" "%s"\n' "$f" "$f"
+            done
+            echo 'bye'
+          } > "$RUNNER_TEMP/gpro-promote.lftp"
+          lftp -u "$FTP_USER","$FTP_PASSWORD" "ftp://$FTP_HOST" -f "$RUNNER_TEMP/gpro-promote.lftp"
+          echo "Deployment completed; index.html promoted after all modules."
