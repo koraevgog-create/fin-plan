@@ -38,7 +38,7 @@ jobs:
         run: |
           if [[ -z "$FTP_HOST" || -z "$FTP_USER" || -z "$FTP_PASSWORD" ]]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::Beget FTP secrets not configured yet; deployment skipped."
+            echo "::error::Beget FTP secrets are missing. Deployment cannot be verified."\n            exit 1
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
@@ -72,5 +72,12 @@ jobs:
           cls -l portfolio.js
           cls -l bootstrap.js
           cls -l index.html
+          get portfolio.js -o /tmp/gpro-remote-portfolio.js
+          get bootstrap.js -o /tmp/gpro-remote-bootstrap.js
+          get index.html -o /tmp/gpro-remote-index.html
           bye
           LFTP
+          cmp portfolio.js /tmp/gpro-remote-portfolio.js
+          cmp bootstrap.js /tmp/gpro-remote-bootstrap.js
+          cmp index.html /tmp/gpro-remote-index.html
+          echo "Critical deployed files match GitHub build byte for byte."\n
