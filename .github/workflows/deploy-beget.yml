@@ -68,7 +68,7 @@ jobs:
             echo 'mkdir -f api'
             # First upload ALL files to temporary names, never removing live files.
             for f in "${files[@]}"; do
-              printf 'put -c "%s" -o "%s.gpro-upload"\n' "$f" "$f"
+              printf 'put "%s" -o "%s.gpro-upload"\n' "$f" "$f"
             done
             # Download and verify the staged files before replacing live files.
             for f in "${files[@]}"; do
@@ -77,7 +77,7 @@ jobs:
             echo 'bye'
           } > "$RUNNER_TEMP/gpro-stage.lftp"
 
-          lftp -u "$FTP_USER","$FTP_PASSWORD" "ftp://$FTP_HOST" -f "$RUNNER_TEMP/gpro-stage.lftp"
+          lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/gpro-stage.lftp; bye" "ftp://$FTP_HOST"
           for f in "${files[@]}"; do
             cmp "$f" "$RUNNER_TEMP/gpro-verify/$f"
           done
@@ -93,10 +93,11 @@ jobs:
             echo 'set net:max-retries 5'
             echo 'set net:reconnect-interval-base 3'
             echo 'set net:timeout 45'
+            echo 'set xfer:clobber yes'
             for f in "${files[@]}"; do
-              printf 'mv "%s.gpro-upload" "%s"\n' "$f" "$f"
+              printf 'put "%s" -o "%s"\n' "$f" "$f"
             done
             echo 'bye'
           } > "$RUNNER_TEMP/gpro-promote.lftp"
-          lftp -u "$FTP_USER","$FTP_PASSWORD" "ftp://$FTP_HOST" -f "$RUNNER_TEMP/gpro-promote.lftp"
-          echo "Deployment completed; index.html promoted after all modules."
+          lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/gpro-promote.lftp; bye" "ftp://$FTP_HOST"
+          echo "Deployment completed; index.html published after all modules."
