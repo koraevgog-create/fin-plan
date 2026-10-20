@@ -1,0 +1,61 @@
+name: GPRO Code Quality
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '*.js'
+      - '*.html'
+      - '*.css'
+      - 'api/**'
+      - '.github/workflows/code-quality.yml'
+  pull_request:
+    paths:
+      - '*.js'
+      - '*.html'
+      - '*.css'
+      - 'api/**'
+      - '.github/workflows/code-quality.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in portfolio.js bootstrap.js backup.js server-sync.js command.js; do
+            node --check "$f"
+          done
+      - name: PHP syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find api -type f -name '*.php' -print0 | xargs -0 -r -n1 php -l
+      - name: Required app assets and links
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in index.html portfolio.js bootstrap.js backup.js server-sync.js command.css api/state.php; do
+            test -s "$f" || { echo "::error::Missing $f"; exit 1; }
+          done
+          grep -q 'bootstrap.js' index.html
+          grep -q 'portfolio.js' bootstrap.js
+          grep -q 'server-sync.js' index.html
+          echo 'Static entry point and required assets present'
+      - name: Deployment isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -Eq '^[[:space:]]+push:' .github/workflows/deploy-beget.yml; then
+            echo "::error::Unsafe automatic production deployment was re-enabled."
+            exit 1
+          fi
+          echo 'Beget production remains protected from automatic pushes'
