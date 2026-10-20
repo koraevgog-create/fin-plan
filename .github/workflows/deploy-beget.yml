@@ -101,3 +101,19 @@ jobs:
           } > "$RUNNER_TEMP/gpro-promote.lftp"
           lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/gpro-promote.lftp; bye" "ftp://$FTP_HOST"
           echo "Deployment completed; index.html published after all modules."
+          # Public HTTP check detects 404/HTML responses to JavaScript imports.
+          # A cache-busting query makes the test independent of browser caches.
+          origin="http://command.d900325z.beget.tech"
+          for f in portfolio.js bootstrap.js index.html; do
+            curl --fail --silent --show-error --location --retry 3 --max-time 30 \
+              -D "$RUNNER_TEMP/gpro-http-headers" \
+              "$origin/$f?verify=$GITHUB_SHA" \
+              -o "$RUNNER_TEMP/gpro-http-$f"
+            cmp "$f" "$RUNNER_TEMP/gpro-http-$f" || {
+              echo "::error::$f served over HTTP differs from the committed file."
+              exit 1
+            }
+            echo "HTTP verified: $f"
+          done
+          echo "FTP and public HTTP deployment checks passed."
+
