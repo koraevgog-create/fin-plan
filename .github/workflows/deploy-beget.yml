@@ -66,6 +66,11 @@ jobs:
           set ssl:verify-certificate yes
           set net:max-retries 2
           set net:timeout 20
-          mirror --reverse --verbose --only-newer --no-perms --parallel=2 ./ .
+          # Force a consistent release: stale FTP timestamps must not skip unchanged JS modules.
+          mirror --reverse --verbose --transfer-all --no-perms --parallel=2 ./ .
+          # Verify the entry module is present before reporting success.
+          cls -l portfolio.js
+          cls -l bootstrap.js
+          cls -l index.html
           bye
           LFTP
