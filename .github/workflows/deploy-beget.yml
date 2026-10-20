@@ -55,11 +55,13 @@ jobs:
 
           # No mirror and no removal of existing files. The FTP user must be
           # restricted to this site's public_html; state storage is not touched.
-          files=(command.css command.js backup.js server-sync.js command.html portfolio.js bootstrap.js index.html api/.htaccess api/state.php)
+          files=(portfolio.js command.css command.js backup.js server-sync.js command.html bootstrap.js index.html api/.htaccess api/state.php)
           {
             echo 'set cmd:fail-exit yes'
             echo 'set ftp:ssl-force yes'
             echo 'set ftp:ssl-protect-data yes'
+            echo 'set ftp:passive-mode yes'
+            echo 'set ftp:prefer-epsv no'
             echo 'set ssl:verify-certificate yes'
             echo 'set net:max-retries 5'
             echo 'set net:reconnect-interval-base 3'
@@ -77,7 +79,16 @@ jobs:
             echo 'bye'
           } > "$RUNNER_TEMP/gpro-stage.lftp"
 
-          lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/gpro-stage.lftp; bye" "ftp://$FTP_HOST"
+          if ! lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/gpro-stage.lftp; bye" "ftp://$FTP_HOST"; then
+            echo "::warning::lftp staging failed; independently testing FTPS data transfer for portfolio.js."
+            if curl --fail --silent --show-error --ftp-ssl-reqd --ftp-pasv --disable-epsv --connect-timeout 20 --max-time 120 --retry 2 --retry-delay 3 --user "$FTP_USER:$FTP_PASSWORD" --upload-file portfolio.js "ftp://$FTP_HOST/portfolio.js.gpro-diagnostic"; then
+              echo "::notice::curl FTPS diagnostic upload succeeded; lftp transfer settings are likely responsible."
+            else
+              echo "::error::curl FTPS diagnostic upload also failed; investigate FTP permissions, quota and data-channel connectivity."
+            fi
+            echo "::error::Staging failed; no production files were promoted."
+            exit 1
+          fi
           for f in "${files[@]}"; do
             cmp "$f" "$RUNNER_TEMP/gpro-verify/$f"
           done
@@ -89,6 +100,8 @@ jobs:
             echo 'set cmd:fail-exit yes'
             echo 'set ftp:ssl-force yes'
             echo 'set ftp:ssl-protect-data yes'
+            echo 'set ftp:passive-mode yes'
+            echo 'set ftp:prefer-epsv no'
             echo 'set ssl:verify-certificate yes'
             echo 'set net:max-retries 5'
             echo 'set net:reconnect-interval-base 3'
