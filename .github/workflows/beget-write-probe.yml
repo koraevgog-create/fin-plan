@@ -1,0 +1,25 @@
+name: GPRO Beget Write Probe
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HOST: ${{ secrets.BEGET_FTP_HOST }}
+      USERNAME: ${{ secrets.BEGET_FTP_USER }}
+      PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+    steps:
+      - name: Upload unique harmless probe and verify public URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$HOST" && test -n "$USERNAME" && test -n "$PASSWORD"
+          file="gpro-ftps-probe-${GITHUB_RUN_ID}.txt"
+          printf 'gpro-write-probe-%s\n' "$GITHUB_RUN_ID" > "/tmp/$file"
+          curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 15 --max-time 90 --retry 1 --user "$USERNAME:$PASSWORD" --upload-file "/tmp/$file" "ftp://$HOST/$file"
+          curl --fail --show-error --silent --location --max-time 25 "http://command.d900325z.beget.tech/$file" -o /tmp/gpro-public-probe
+          cmp "/tmp/$file" /tmp/gpro-public-probe
+          echo "Upload succeeded and confirmed in production document root."
