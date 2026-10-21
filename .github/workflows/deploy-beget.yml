@@ -1,63 +1,74 @@
-name: GPRO Beget Safe Preflight
-
-# Production deployment is intentionally disabled until Beget FTPS 426 is fixed.
-# Never mutate the live site automatically from a push.
+name: GPRO Beget Safe Deploy
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'command.html'
+      - 'command.css'
+      - 'bootstrap.js'
+      - 'portfolio.js'
+      - 'personal-finance.js'
+      - 'backup.js'
+      - 'server-sync.js'
+      - '.github/workflows/deploy-beget.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: gpro-beget-preflight
+  group: gpro-beget-production
   cancel-in-progress: false
 
 jobs:
-  preflight:
+  deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     env:
-      FTP_HOST: ${{ secrets.BEGET_FTP_HOST }}
-      FTP_USER: ${{ secrets.BEGET_FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+      HOST: ${{ secrets.BEGET_FTP_HOST }}
+      USERNAME: ${{ secrets.BEGET_FTP_USER }}
+      PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+      ORIGIN: http://command.d900325z.beget.tech
     steps:
       - uses: actions/checkout@v4
-      - name: Check application files
+      - name: Validate files before upload
         shell: bash
         run: |
           set -euo pipefail
-          test -s portfolio.js
-          test -s bootstrap.js
-          test -s index.html
-          test -s server-sync.js
-          node --check portfolio.js
-          node --check server-sync.js
-          node --check backup.js
-          node --check command.js
-          node --check bootstrap.js
-          php -l api/state.php
-          sha256sum portfolio.js bootstrap.js index.html
-      - name: Check public site without modifying production
+          test -n "$HOST" && test -n "$USERNAME" && test -n "$PASSWORD"
+          for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do test -s "$file"; done
+          for file in bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do node --check "$file"; done
+          grep -q 'personalFinance' index.html
+          grep -q 'personal-finance.js' bootstrap.js
+      - name: Upload and verify each replacement before switching
         shell: bash
         run: |
           set -euo pipefail
-          origin="http://command.d900325z.beget.tech"
-          for file in index.html bootstrap.js portfolio.js server-sync.js; do
-            curl --fail --show-error --silent --location --retry 2 --max-time 20 \
-              "$origin/$file?preflight=$GITHUB_SHA" -o "/tmp/gpro-$file"
-            test -s "/tmp/gpro-$file"
-            if [ "$file" = portfolio.js ]; then
-              node --check "/tmp/gpro-$file"
-            fi
-            echo "Public file available: $file"
+          ftp_base="ftp://$HOST"
+          # Dependencies first; entry documents last. Never delete or mirror directories.
+          files=(personal-finance.js command.css backup.js server-sync.js portfolio.js bootstrap.js command.html index.html)
+          for file in "${files[@]}"; do
+            temporary=".${file}.gpro-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tmp"
+            echo "Uploading staged copy of $file"
+            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 20 --max-time 180 --retry 2 \
+              --user "$USERNAME:$PASSWORD" --upload-file "$file" "$ftp_base/$temporary"
+            echo "Verifying staged copy of $file"
+            curl --fail --show-error --silent --location --max-time 30 \
+              "$ORIGIN/$temporary" -o "/tmp/gpro-verify-$file"
+            cmp "$file" "/tmp/gpro-verify-$file"
+            echo "Verified staged bytes for $file; activating via FTP rename"
+            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 20 --max-time 40 \
+              --user "$USERNAME:$PASSWORD" \
+              --quote "RNFR $temporary" --quote "RNTO $file" "$ftp_base/" -o /dev/null
+            echo "Activated $file"
           done
-      - name: Check FTPS credentials without upload
+      - name: Confirm public entry and dependencies
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "$FTP_HOST" || -z "$FTP_USER" || -z "$FTP_PASSWORD" ]]; then
-            echo "::warning::Beget FTPS secrets missing; publishing remains disabled."
-            exit 0
-          fi
-          echo "FTPS credentials configured. No uploads attempted."
-          echo "::notice::Production deploy remains disabled until FTPS 426 root cause is resolved and release switching is tested."
+          for file in index.html bootstrap.js portfolio.js personal-finance.js; do
+            curl --fail --show-error --silent --location --max-time 30 "$ORIGIN/$file?build=$GITHUB_SHA" -o "/tmp/gpro-live-$file"
+            cmp "$file" "/tmp/gpro-live-$file"
+          done
+          echo "Deployed files verified. index.php and server data were not touched."
