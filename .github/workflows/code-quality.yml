@@ -31,7 +31,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in portfolio.js bootstrap.js backup.js server-sync.js command.js; do
+          for f in portfolio.js personal-finance.js bootstrap.js backup.js server-sync.js command.js; do
             node --check "$f"
           done
       - name: PHP syntax
@@ -43,11 +43,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in index.html portfolio.js bootstrap.js backup.js server-sync.js command.css api/state.php; do
+          for f in index.html portfolio.js personal-finance.js bootstrap.js backup.js server-sync.js command.css api/state.php; do
             test -s "$f" || { echo "::error::Missing $f"; exit 1; }
           done
           grep -q 'bootstrap.js' index.html
           grep -q 'portfolio.js' bootstrap.js
+          grep -q 'personal-finance.js' bootstrap.js
+          grep -q 'personalFinance' index.html
           grep -q 'server-sync.js' index.html
           echo 'Static entry point and required assets present'
       - name: Deployment isolation
