@@ -387,3 +387,35 @@ html[data-theme="light"] #app .empty{background:#f8fbff}
 .gpro-week-day button{margin-top:auto;min-height:36px;font-size:12px}
 @media(max-width:1000px){.gpro-week-grid{grid-template-columns:repeat(7,minmax(180px,1fr))}}
 @media(max-width:680px){.gpro-week-grid{grid-template-columns:repeat(7,minmax(190px,1fr))}.gpro-task-meta select{max-width:100%}}
+
+
+/* Personal finance: compact accounting workspace */
+.pf-root{display:flex;flex-direction:column;gap:16px;min-width:0}
+.pf-period{gap:10px;align-items:end}
+.pf-period label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--muted)}
+.pf-period input{min-height:40px;max-width:210px}
+.pf-tabs{display:flex;flex-wrap:wrap;gap:6px}
+.pf-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.pf-stat h2{font-size:clamp(19px,2vw,29px);margin:10px 0;overflow-wrap:anywhere}
+.pf-stat small{font-size:12px;color:var(--muted)}
+.pf-history{padding:12px 0;border-bottom:1px solid var(--line)}
+.pf-history .row{justify-content:space-between;gap:12px;font-size:13px}
+.pf-bar{height:7px;margin-top:8px;border-radius:8px;background:color-mix(in srgb,var(--cyan) 10%,transparent);overflow:hidden}
+.pf-bar i{display:block;height:100%;background:#36c69a;border-radius:8px}
+.pf-bar.expense i{background:#f0747a}
+.pf-history small{display:block;color:var(--muted);margin-top:5px}
+.pf-table{max-width:100%;overflow-x:auto}
+.pf-table table{width:100%;min-width:660px}
+.pf-table td small{display:block;color:var(--muted);font-size:11px;max-width:180px;overflow-wrap:anywhere}
+.pf-table td button{padding:6px 9px;margin-right:4px}
+.pf-negative{color:#f0747a}
+.pf-entry{display:flex;flex-direction:column;gap:14px}
+.pf-entry label,.pf-simple{display:flex;flex-direction:column;gap:6px}
+.pf-entry [hidden]{display:none!important}
+.pf-simple{gap:10px}
+.pf-simple button{align-self:flex-start}
+.pf-root input,.pf-root select{max-width:100%;min-width:0}
+.pf-root .card .row{margin:8px 0;justify-content:space-between}
+.pf-root .table input[type=number]{width:130px}
+@media(max-width:1100px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-period button{flex:1 1 auto}.pf-stat{padding:12px}.pf-stat h2{font-size:20px}.pf-tabs button{flex:1 1 auto}}
