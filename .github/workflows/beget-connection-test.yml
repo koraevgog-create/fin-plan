@@ -1,0 +1,18 @@
+name: Beget Connection Test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test FTPS login and list files only
+        env:
+          HOST: ${{ secrets.BEGET_FTP_HOST }}
+          USERNAME: ${{ secrets.BEGET_FTP_USER }}
+          PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+        run: |
+          test -n "$HOST" && test -n "$USERNAME" && test -n "$PASSWORD"
+          curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 15 --max-time 60 --user "$USERNAME:$PASSWORD" "ftp://$HOST/" -o /dev/null
+          echo "FTPS directory listing successful"
