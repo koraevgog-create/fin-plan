@@ -4,6 +4,7 @@ try {
   if (location.hostname.endsWith('.beget.tech') && window.gproServerSync) {
     await window.gproServerSync.start();
   }
+  await import('./personal-finance.js?v=' + BUILD);
   await import('./portfolio.js?v=' + BUILD);
 } catch (error) {
   console.error('GPRO dashboard startup failed', error);
