@@ -1,17 +1,5 @@
-name: GPRO Beget Safe Deploy
+name: GPRO Beget Manual Deploy (FTPS blocked)
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'command.html'
-      - 'command.css'
-      - 'bootstrap.js'
-      - 'portfolio.js'
-      - 'personal-finance.js'
-      - 'backup.js'
-      - 'server-sync.js'
-      - '.github/workflows/deploy-beget.yml'
   workflow_dispatch:
 
 permissions:
