@@ -30,7 +30,7 @@ jobs:
           curl --fail --show-error --silent --ftp-ssl-reqd --user "$USERNAME:$PASSWORD" --quote "MKD $release" "ftp://$HOST/" -o /dev/null
           for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
             echo "Uploading $file to isolated release"
-            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 15 --max-time 120 --retry 2 --user "$USERNAME:$PASSWORD" --upload-file "$file" "ftp://$HOST/$release/$file"
+            curl --fail --show-error --silent --ftp-ssl-reqd --ftp-method nocwd --disable-epsv --ftp-pasv --connect-timeout 15 --max-time 120 --retry 1 --user "$USERNAME:$PASSWORD" --upload-file "$file" "ftp://$HOST/$release/$file"
           done
       - name: Verify release bytes from public URL
         shell: bash
