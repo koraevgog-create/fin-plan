@@ -1,0 +1,45 @@
+name: GPRO Upload Verified Release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      HOST: ${{ secrets.BEGET_FTP_HOST }}
+      USERNAME: ${{ secrets.BEGET_FTP_USER }}
+      PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate application assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do test -s "$file"; done
+          for file in bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do node --check "$file"; done
+          grep -q 'personalFinance' index.html
+          grep -q 'personal-finance.js' bootstrap.js
+      - name: Upload release to isolated directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          release="gpro-release-${GITHUB_SHA:0:12}-${GITHUB_RUN_ID}"
+          echo "release=$release" >> "$GITHUB_ENV"
+          curl --fail --show-error --silent --ftp-ssl-reqd --user "$USERNAME:$PASSWORD" --quote "MKD $release" "ftp://$HOST/" -o /dev/null
+          for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            echo "Uploading $file to isolated release"
+            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 15 --max-time 120 --retry 2 --user "$USERNAME:$PASSWORD" --upload-file "$file" "ftp://$HOST/$release/$file"
+          done
+      - name: Verify release bytes from public URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            curl --fail --show-error --silent --location --max-time 30 "http://command.d900325z.beget.tech/$release/$file" -o "/tmp/gpro-verify-$file"
+            cmp "$file" "/tmp/gpro-verify-$file"
+            echo "Verified: $file"
+          done
+          echo "Verified isolated release at /$release/"
+          echo "Production files were NOT changed. A separate publish/switch step is required."
