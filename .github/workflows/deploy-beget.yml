@@ -1,62 +1,76 @@
-name: GPRO Beget Manual Deploy (FTPS blocked)
+name: GPRO Beget LFTP Safe Deploy
 on:
   workflow_dispatch:
-
 permissions:
   contents: read
-
 concurrency:
   group: gpro-beget-production
   cancel-in-progress: false
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      HOST: ${{ secrets.BEGET_FTP_HOST }}
-      USERNAME: ${{ secrets.BEGET_FTP_USER }}
-      PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
-      ORIGIN: http://command.d900325z.beget.tech
+      FTP_HOST: ${{ secrets.BEGET_FTP_HOST }}
+      FTP_USER: ${{ secrets.BEGET_FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.BEGET_FTP_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
-      - name: Validate files before upload
+      - name: Validate source
+        run: |
+          set -euo pipefail
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do test -s "$f"; done
+          for f in command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do node --check "$f"; done
+      - name: Install lftp
+        run: sudo apt-get update -qq && sudo apt-get install -y lftp
+      - name: Stage and verify all assets before any live replacement
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$HOST" && test -n "$USERNAME" && test -n "$PASSWORD"
-          for file in index.html command.html command.css bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do test -s "$file"; done
-          for file in bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do node --check "$file"; done
-          grep -q 'personalFinance' index.html
-          grep -q 'personal-finance.js' bootstrap.js
-      - name: Upload and verify each replacement before switching
+          test -n "$FTP_HOST" && test -n "$FTP_USER" && test -n "$FTP_PASSWORD"
+          mkdir -p "$RUNNER_TEMP/verified"
+          files=(personal-finance.js command.css command.js backup.js server-sync.js portfolio.js bootstrap.js command.html index.html)
+          {
+            echo 'set cmd:fail-exit yes'
+            echo 'set ftp:ssl-force yes'
+            echo 'set ftp:ssl-protect-data yes'
+            echo 'set ssl:verify-certificate yes'
+            echo 'set net:max-retries 3'
+            echo 'set net:timeout 45'
+            echo 'set xfer:clobber yes'
+            for f in "${files[@]}"; do
+              printf 'put "%s" -o ".%s.gpro-%s.tmp"\n' "$f" "$f" "$GITHUB_RUN_ID"
+            done
+            for f in "${files[@]}"; do
+              printf 'get ".%s.gpro-%s.tmp" -o "%s/verified/%s"\n' "$f" "$GITHUB_RUN_ID" "$RUNNER_TEMP" "$f"
+            done
+            echo 'bye'
+          } > "$RUNNER_TEMP/stage.lftp"
+          lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/stage.lftp; bye" "ftp://$FTP_HOST"
+          for f in "${files[@]}"; do cmp "$f" "$RUNNER_TEMP/verified/$f"; done
+          echo "All staged files verified."
+      - name: Promote staged assets by rename (entry HTML last)
         shell: bash
         run: |
           set -euo pipefail
-          ftp_base="ftp://$HOST"
-          # Dependencies first; entry documents last. Never delete or mirror directories.
-          files=(personal-finance.js command.css backup.js server-sync.js portfolio.js bootstrap.js command.html index.html)
-          for file in "${files[@]}"; do
-            temporary=".${file}.gpro-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.tmp"
-            echo "Uploading staged copy of $file"
-            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 20 --max-time 180 --retry 2 \
-              --user "$USERNAME:$PASSWORD" --upload-file "$file" "$ftp_base/$temporary"
-            echo "Verifying staged copy of $file"
-            curl --fail --show-error --silent --location --max-time 30 \
-              "$ORIGIN/$temporary" -o "/tmp/gpro-verify-$file"
-            cmp "$file" "/tmp/gpro-verify-$file"
-            echo "Verified staged bytes for $file; activating via FTP rename"
-            curl --fail --show-error --silent --ftp-ssl-reqd --connect-timeout 20 --max-time 40 \
-              --user "$USERNAME:$PASSWORD" \
-              --quote "RNFR $temporary" --quote "RNTO $file" "$ftp_base/" -o /dev/null
-            echo "Activated $file"
+          files=(personal-finance.js command.css command.js backup.js server-sync.js portfolio.js bootstrap.js command.html index.html)
+          {
+            echo 'set cmd:fail-exit yes'
+            echo 'set ftp:ssl-force yes'
+            echo 'set ftp:ssl-protect-data yes'
+            echo 'set ssl:verify-certificate yes'
+            for f in "${files[@]}"; do
+              printf 'mv ".%s.gpro-%s.tmp" "%s"\n' "$f" "$GITHUB_RUN_ID" "$f"
+            done
+            echo 'bye'
+          } > "$RUNNER_TEMP/promote.lftp"
+          lftp -u "$FTP_USER","$FTP_PASSWORD" -e "source $RUNNER_TEMP/promote.lftp; bye" "ftp://$FTP_HOST"
+      - name: Verify public assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in index.html command.html bootstrap.js portfolio.js personal-finance.js; do
+            curl --fail --show-error --silent --location --max-time 30 "http://command.d900325z.beget.tech/$f?verify=$GITHUB_SHA" -o "$RUNNER_TEMP/$f"
+            cmp "$f" "$RUNNER_TEMP/$f"
           done
-      - name: Confirm public entry and dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          for file in index.html bootstrap.js portfolio.js personal-finance.js; do
-            curl --fail --show-error --silent --location --max-time 30 "$ORIGIN/$file?build=$GITHUB_SHA" -o "/tmp/gpro-live-$file"
-            cmp "$file" "/tmp/gpro-live-$file"
-          done
-          echo "Deployed files verified. index.php and server data were not touched."
+          echo "Production assets verified. Server state and index.php untouched."
