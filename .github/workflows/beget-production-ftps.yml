@@ -1,0 +1,77 @@
+name: GPRO Beget Production FTPS Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - command.html
+      - command.css
+      - command.js
+      - bootstrap.js
+      - portfolio.js
+      - personal-finance.js
+      - backup.js
+      - server-sync.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gpro-beget-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate all managed assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            test -s "$f"
+          done
+          for f in command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            node --check "$f"
+          done
+
+      - name: Prepare allowlisted production files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/.gpro-production-upload"
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            cp -- "$f" "$GITHUB_WORKSPACE/.gpro-production-upload/$f"
+          done
+          test "$(find "$GITHUB_WORKSPACE/.gpro-production-upload" -maxdepth 1 -type f | wc -l)" -eq 9
+
+      - name: Deploy only allowlisted files via proven FTPS action
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.BEGET_FTP_HOST }}
+          username: ${{ secrets.BEGET_FTP_USER }}
+          password: ${{ secrets.BEGET_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./.gpro-production-upload/
+          server-dir: ./
+          state-name: .gpro-managed-assets-state.json
+          dangerous-clean-slate: false
+
+      - name: Verify each published asset byte for byte
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gpro-production-verified"
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            curl --fail --show-error --silent --location --retry 2 --max-time 40 "http://command.d900325z.beget.tech/$f?gpro_deploy=$GITHUB_SHA" -o "$RUNNER_TEMP/gpro-production-verified/$f"
+            cmp -- "$f" "$RUNNER_TEMP/gpro-production-verified/$f"
+            echo "Verified production file: $f"
+          done
+          echo "SUCCESS: All nine production assets match GitHub. index.php and server-side data were excluded."
