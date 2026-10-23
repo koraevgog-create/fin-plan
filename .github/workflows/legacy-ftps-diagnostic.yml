@@ -1,0 +1,37 @@
+name: GPRO Isolated Legacy FTPS Diagnostic
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate diagnostic assets
+        run: |
+          test -s gpro-ftp-diagnostic/index.html
+          test -s gpro-ftp-diagnostic/style.css
+          test -s gpro-ftp-diagnostic/app.js
+          node --check gpro-ftp-diagnostic/app.js
+      - name: Upload only isolated diagnostic folder via legacy FTPS action
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.BEGET_FTP_HOST }}
+          username: ${{ secrets.BEGET_FTP_USER }}
+          password: ${{ secrets.BEGET_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./gpro-ftp-diagnostic/
+          server-dir: ./gpro-ftp-diagnostic/
+          dangerous-clean-slate: false
+      - name: Verify isolated HTML CSS JS files
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in index.html style.css app.js; do
+            curl --fail --silent --show-error --location --max-time 30 "http://command.d900325z.beget.tech/gpro-ftp-diagnostic/$f?sha=$GITHUB_SHA" -o "/tmp/gpro-check-$f"
+            cmp "gpro-ftp-diagnostic/$f" "/tmp/gpro-check-$f"
+          done
+          echo "Verified isolated HTML CSS JS files."
