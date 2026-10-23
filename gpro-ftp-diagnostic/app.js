@@ -1,0 +1,1 @@
+(()=>{const out=document.getElementById('result');const test=()=>out.textContent='JS OK · '+new Date().toISOString();document.getElementById('btn').addEventListener('click',test);test()})();
