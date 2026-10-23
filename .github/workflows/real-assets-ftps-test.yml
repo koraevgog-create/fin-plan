@@ -1,0 +1,44 @@
+name: GPRO Real Assets Safe FTPS Test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-real-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare real assets in isolated release folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ftps-real-assets-test
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            test -s "$f"
+            cp "$f" "ftps-real-assets-test/$f"
+          done
+          for f in command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do node --check "$f"; done
+          wc -c ftps-real-assets-test/*
+      - name: Upload real files to isolated test directory
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.BEGET_FTP_HOST }}
+          username: ${{ secrets.BEGET_FTP_USER }}
+          password: ${{ secrets.BEGET_FTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./ftps-real-assets-test/
+          server-dir: ./ftps-real-assets-test/
+          dangerous-clean-slate: false
+      - name: Verify all real assets from Beget over HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gpro-verified"
+          for f in index.html command.html command.css command.js bootstrap.js portfolio.js personal-finance.js backup.js server-sync.js; do
+            curl --fail --show-error --silent --location --max-time 40 "http://command.d900325z.beget.tech/ftps-real-assets-test/$f?sha=$GITHUB_SHA" -o "$RUNNER_TEMP/gpro-verified/$f"
+            cmp "ftps-real-assets-test/$f" "$RUNNER_TEMP/gpro-verified/$f"
+            echo "Verified: $f"
+          done
+          echo "SUCCESS: All real assets verified. Production root was not modified."
