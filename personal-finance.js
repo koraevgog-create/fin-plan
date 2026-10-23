@@ -7,8 +7,8 @@
   const month = () => today().slice(0,7);
   const uid = () => 'pf'+Date.now().toString(36)+Math.random().toString(36).slice(2,9);
   const defaults = {
-    income:['Зарплата','Подработка','Доп доход 1','Доп доход 2','Подарки','Аренда','Продажи','Дивиденды и проценты','Другое'],
-    expense:['Продукты','Жильё и коммунальные','Ипотека и кредиты: проценты','Транспорт','Связь и интернет','Здоровье','Дети и семья','Одежда','Образование','Развлечения','Кафе и доставка','Помощь близким','Налоги и комиссии','Бизнес: личные расходы','Другое'],
+    income:['Зарплата','Подработка','Перепродажа уценки DNS','Аренда колонок','Подарки','Другое'],
+    expense:['Продукты','Жильё и коммунальные','Ипотека и кредиты: проценты','Транспорт','Связь и интернет','Здоровье','Дети и семья','Одежда','Образование','Развлечения','Кафе и доставка','Помощь близким','Налоги и комиссии','Бизнес: личные расходы','Закупка товаров для перепродажи','Логистика перепродажи','Расходы на аренду оборудования','Личные расходы','Другое'],
     accounts:['Наличные','Основная карта','Накопительный счёт','Брокерский счёт']
   };
   const init = state => {
@@ -17,13 +17,18 @@
     l.transactions=Array.isArray(l.transactions)?l.transactions:[];
     l.categories ||= {income:[...defaults.income],expense:[...defaults.expense]};
     for(const type of ['income','expense'])if(!Array.isArray(l.categories[type]))l.categories[type]=[...defaults[type]];
+    // Preserve historical transactions while migrating obsolete income labels.
+    const rename={'Доп доход 1':'Перепродажа уценки DNS','Доп доход 2':'Аренда колонок'};
+    for(const t of l.transactions)if(t.type==='income'&&rename[t.category])t.category=rename[t.category];
+    l.categories.income=[...new Set([...defaults.income,...l.categories.income.filter(c=>!['Доп доход 1','Доп доход 2','Аренда','Продажи','Дивиденды и проценты'].includes(c))])];
+    l.categories.expense=[...new Set([...l.categories.expense,...defaults.expense])];
     l.accounts=Array.isArray(l.accounts)?l.accounts:[...defaults.accounts].map(name=>({id:uid(),name,opening:0}));
     l.budgets ||= {};
     l.assets=Array.isArray(l.assets)?l.assets:[];
     l.liabilities=Array.isArray(l.liabilities)?l.liabilities:[];
     return l;
   };
-  let selectedMonth=month(),tab='dashboard',editing=null,quick=false;
+  let selectedMonth=month(),tab='dashboard',editing=null,quick=false,transferQuick=false;
   const kinds={income:'Доход',expense:'Расход',transfer:'Перевод',saving:'В накопления',debt_in:'Получение займа',debt_out:'Погашение долга'};
   const accountName=(l,id)=>l.accounts.find(a=>a.id===id)?.name||'Неизвестный счёт';
   const totals=(l,m)=>l.transactions.filter(t=>t.date?.slice(0,7)===m).reduce((a,t)=>{
@@ -54,8 +59,8 @@
     for(const t of l.transactions)if(t.type==='expense'&&t.date?.slice(0,7)===selectedMonth)spentByCategory[t.category]=(spentByCategory[t.category]||0)+Number(t.amount||0);
     const monthly=l.transactions.filter(t=>t.date?.slice(0,7)===selectedMonth).slice().sort((a,b)=>b.date.localeCompare(a.date)||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
     const cards='<div class="grid pf-kpis">'+summary('Доход за месяц',current.income,'Прошлый месяц: '+money(previous.income))+summary('Расход за месяц',current.expense,'Прошлый месяц: '+money(previous.expense))+summary('Денежный результат',current.income-current.expense,'Доходы минус расходы')+summary('Переведено в накопления',current.saved,'Не считается расходом')+'</div>';
-    const period='<div class="row wrap pf-period"><button type="button" data-pf="prev">← Предыдущий</button><label>Месяц <input id="pfMonth" type="month" value="'+esc(selectedMonth)+'"></label><button type="button" data-pf="current">Текущий</button><button type="button" data-pf="next">Следующий →</button><button type="button" class="primary" data-pf="quick">+ Быстрая операция</button></div>';
-    const tabs='<div class="tabs pf-tabs">'+[['dashboard','Обзор'],['operations','Операции'],['budget','Бюджет'],['accounts','Счета'],['wealth','Активы и долги'],['categories','Категории']].map(([v,t])=>'<button type="button" data-pf="tab:'+v+'" class="'+(tab===v?'active':'')+'">'+t+'</button>').join('')+'</div>';
+    const period='<div class="row wrap pf-period"><button type="button" data-pf="prev">← Предыдущий</button><label>Месяц <input id="pfMonth" type="month" value="'+esc(selectedMonth)+'"></label><button type="button" data-pf="current">Текущий</button><button type="button" data-pf="next">Следующий →</button><button type="button" class="primary" data-pf="quick">+ Быстрая операция</button><button type="button" data-pf="transferQuick">⇄ Перевод между счетами</button></div>';
+    const tabs='<div class="tabs pf-tabs">'+[['dashboard','Обзор'],['operations','Операции'],['budget','Бюджет'],['accounts','Счета'],['earnings','Мои заработки'],['wealth','Активы и долги'],['categories','Категории']].map(([v,t])=>'<button type="button" data-pf="tab:'+v+'" class="'+(tab===v?'active':'')+'">'+t+'</button>').join('')+'</div>';
     const history=()=>{
       const byMonth=new Map();for(const t of l.transactions){const m=t.date?.slice(0,7);if(m)byMonth.set(m,true)}
       for(let i=0;i<6;i++){const d=new Date(Number(selectedMonth.slice(0,4)),Number(selectedMonth.slice(5,7))-1-i,1);byMonth.set([d.getFullYear(),String(d.getMonth()+1).padStart(2,'0')].join('-'),true)}
@@ -64,7 +69,7 @@
     const ledgerTable=(items)=>'<div class="table pf-table"><table><thead><tr><th>Дата</th><th>Операция</th><th>Категория</th><th>Счёт</th><th>Сумма</th><th></th></tr></thead><tbody>'+items.map(t=>'<tr><td>'+esc(t.date)+'</td><td>'+esc(kinds[t.type]||t.type)+'</td><td>'+esc(t.category||'—')+(t.note?'<small>'+esc(t.note)+'</small>':'')+'</td><td>'+esc(accountName(l,t.account))+(t.toAccount?' → '+esc(accountName(l,t.toAccount)):'')+'</td><td class="'+(t.type==='expense'?'pf-negative':'')+'">'+(t.type==='expense'?'−':'')+money(t.amount)+'</td><td><button type="button" data-pf="edit:'+esc(t.id)+'">✎</button><button type="button" data-pf="delete:'+esc(t.id)+'">×</button></td></tr>').join('')+'</tbody></table></div>';
     const categoryOptions=(type,selected)=>opts((l.categories[type]||[]).map(v=>({value:v,label:v})),selected);
     const form=(compact=false)=>{
-      const t=editing?l.transactions.find(x=>x.id===editing):null,type=t?.type||'expense';
+      const t=editing?l.transactions.find(x=>x.id===editing):null,type=t?.type||(transferQuick?'transfer':'expense');
       return '<form id="pfEntry" class="card pf-entry"><h3>'+(t?'Редактировать операцию':compact?'Быстрое внесение':'Новая операция')+'</h3><div class="formgrid"><label>Тип<select name="type" id="pfType">'+typeOptions(type)+'</select></label><label>Сумма, ₽<input name="amount" type="number" step="0.01" min="0.01" required inputmode="decimal" value="'+esc(t?.amount||'')+'"></label><label>Дата<input name="date" type="date" required value="'+esc(t?.date||today())+'"></label><label id="pfCategoryWrap">Категория<select name="category" id="pfCategory">'+categoryOptions(type==='income'?'income':'expense',t?.category)+'</select></label><label>Счёт<select name="account" id="pfAccount">'+opts(l.accounts.map(a=>({value:a.id,label:a.name})),t?.account||l.accounts[0]?.id)+'</select></label><label id="pfToWrap">Счёт назначения<select name="toAccount">'+opts(l.accounts.map(a=>({value:a.id,label:a.name})),t?.toAccount||l.accounts[1]?.id)+'</select></label></div><label>Комментарий<input name="note" maxlength="250" placeholder="Необязательно" value="'+esc(t?.note||'')+'"></label><div class="row wrap"><button type="submit" class="primary">✓ Учесть операцию</button><button type="button" data-pf="cancel">Отмена</button></div></form>';
     };
     let body='';
@@ -74,6 +79,10 @@
       body='<article class="card"><h3>Журнал · '+esc(monthLabel(selectedMonth))+'</h3><p class="tiny">Доходы, расходы и внутренние перемещения учитываются раздельно.</p>'+ledgerTable(monthly)+'</article>';
     }else if(tab==='budget'){
       body='<article class="card"><h3>Бюджет по категориям · '+esc(monthLabel(selectedMonth))+'</h3><p class="tiny">Лимиты задаются отдельно для каждого месяца. Переводы и накопления в расход не включаются.</p><div class="table"><table><thead><tr><th>Категория</th><th>Лимит</th><th>Факт</th><th>Осталось</th></tr></thead><tbody>'+l.categories.expense.map(cat=>{const limit=Number(budget[cat]||0),fact=spentByCategory[cat]||0;return '<tr><td>'+esc(cat)+'</td><td><input type="number" min="0" step="0.01" data-pf-limit="'+esc(cat)+'" value="'+limit+'"></td><td>'+money(fact)+'</td><td class="'+(limit>0&&fact>limit?'pf-negative':'')+'">'+(limit?money(limit-fact):'—')+'</td></tr>'}).join('')+'</tbody></table></div></article>';
+    }else if(tab==='earnings'){
+      const names=['Перепродажа','JBL / Event'];
+      const entries=names.map(name=>{const p=(state.projects||[]).find(x=>x.name===name);const tx=(p?.financialHistory||[]).filter(x=>x.date?.slice(0,7)===selectedMonth);const inc=tx.reduce((n,x)=>n+(x.type==='income'?Number(x.amount)||0:0),0),out=tx.reduce((n,x)=>n+(x.type==='expense'?Number(x.amount)||0:0),0);return {name,tx,inc,out,profit:inc-out}});
+      body='<div class="grid pf-kpis">'+summary('Выручка направлений',entries.reduce((n,x)=>n+x.inc,0))+summary('Прямые расходы',entries.reduce((n,x)=>n+x.out,0))+summary('Прибыль направлений',entries.reduce((n,x)=>n+x.profit,0))+'</div>'+entries.map(x=>'<article class="card"><h3>'+esc(x.name)+'</h3><div class="grid three">'+summary('Выручка',x.inc)+summary('Расходы',x.out)+summary('Прибыль',x.profit)+'</div><div class="table"><table><thead><tr><th>Дата</th><th>Операция</th><th>Комментарий</th><th>Сумма</th></tr></thead><tbody>'+x.tx.map(t=>'<tr><td>'+esc(t.date)+'</td><td>'+esc(t.type==='income'?'Доход':'Расход')+'</td><td>'+esc(t.note||t.category||'')+'</td><td>'+money(t.amount)+'</td></tr>').join('')+'</tbody></table></div></article>').join('')+'<p class="tiny">Здесь отображаются операции, привязанные к бизнес-проектам. Они уже учтены в личном журнале, повторно деньги не прибавляются.</p>';
     }else if(tab==='accounts'){
       body='<div class="grid three">'+allBalances.map(a=>'<article class="card"><h3>'+esc(a.name)+'</h3><h2>'+money(a.balance)+'</h2><label>Начальный остаток<input type="number" step="0.01" data-pf-opening="'+esc(a.id)+'" value="'+(Number(a.opening)||0)+'"></label></article>').join('')+'</div><form class="card pf-simple" id="pfAccountForm"><h3>Добавить счёт</h3><input name="name" maxlength="70" required placeholder="Название счёта"><button class="primary">+ Добавить</button></form><p class="tiny">Начальные остатки вводятся один раз. Переводы между счетами не меняют суммарный капитал.</p>';
     }else if(tab==='wealth'){
@@ -92,8 +101,9 @@
       if(action==='prev'||action==='next'){const d=new Date(Number(selectedMonth.slice(0,4)),Number(selectedMonth.slice(5,7))-1+(action==='prev'?-1:1),1);selectedMonth=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0')].join('-')}
       else if(action==='current')selectedMonth=month();
       else if(action.startsWith('tab:')){tab=action.slice(4);quick=false;editing=null}
-      else if(action==='quick'){quick=!quick;editing=null}
-      else if(action==='cancel'){quick=false;editing=null}
+      else if(action==='quick'){quick=!quick;transferQuick=false;editing=null}
+      else if(action==='transferQuick'){quick=true;transferQuick=true;editing=null}
+      else if(action==='cancel'){quick=false;transferQuick=false;editing=null}
       else if(action.startsWith('edit:')){editing=action.slice(5);quick=true}
       else if(action.startsWith('delete:')){const id=action.slice(7),t=l.transactions.find(x=>x.id===id);if(!t||!confirm('Удалить операцию на '+money(t.amount)+'?'))return;l.transactions=l.transactions.filter(x=>x.id!==id)}
       else if(action.startsWith('removeCategory:')){const [,type,encoded]=action.split(':'),cat=decodeURIComponent(encoded);if(l.transactions.some(t=>t.category===cat&&t.type===type)){alert('Категория используется в операциях. Сначала перенесите операции в другую категорию.');return}if(!confirm('Удалить категорию «'+cat+'»?'))return;l.categories[type]=l.categories[type].filter(x=>x!==cat)}
@@ -116,7 +126,7 @@
         const old=editing?l.transactions.find(t=>t.id===editing):null;
         const item={id:old?.id||uid(),createdAt:old?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString(),type,amount:Math.round(amount*100)/100,date,account,toAccount:type==='transfer'||type==='saving'?toAccount:'',category:type==='income'||type==='expense'?category:'',note:String(data.get('note')||'').trim().slice(0,250)};
         if(old)Object.assign(old,item);else l.transactions.push(item);
-        editing=null;quick=false;selectedMonth=date.slice(0,7);tab='operations';refresh();
+        editing=null;quick=false;transferQuick=false;selectedMonth=date.slice(0,7);tab='operations';refresh();
       };
     }
     const accountForm=root.querySelector('#pfAccountForm');if(accountForm)accountForm.onsubmit=e=>{e.preventDefault();const name=accountForm.elements.name.value.trim();if(!name)return;l.accounts.push({id:uid(),name,opening:0});refresh()};
