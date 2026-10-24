@@ -68,7 +68,7 @@ function advancedAnalytics(){
  for(const x of l.inventory||[])if(x.soldAt){const p=(Number(x.sellPrice)||0)-(Number(x.buyPrice)||0)-(Number(x.buyCosts)||0)-(Number(x.sellCosts)||0);add(x.soldAt,p>=0?'income':'expense',Math.abs(p),'Убытки от перепродажи')}
  const days=[];for(let x=new Date(start);x<=end;x.setDate(x.getDate()+1))days.push(localDay(x));
  const max=Math.max(1,...[...rows.values()].flatMap(x=>[x.income,x.expense]));
- const chart=days.map(date=>{const r=rows.get(date)||{income:0,expense:0};return '<div class="gpro-daily-col gpro-chart-hover" tabindex="0" data-chart-label="'+esc(date)+'" data-chart-income="'+esc(money(r.income))+'" data-chart-expense="'+esc(money(r.expense))+'"><div class="gpro-daily-pair"><i class="income" style="height:'+r.income/max*100+'%"></i><i class="expense" style="height:'+r.expense/max*100+'%"></i></div><small>'+esc(date.slice(8))+'</small></div>'}).join('');
+ const chart=days.map(date=>{const r=rows.get(date)||{income:0,expense:0};return '<div class="gpro-daily-col gpro-chart-hover" data-chart-label="'+esc(date)+'" data-chart-income="'+esc(money(r.income))+'" data-chart-expense="'+esc(money(r.expense))+'"><div class="gpro-daily-pair"><i class="income" style="height:'+r.income/max*100+'%"></i><i class="expense" style="height:'+r.expense/max*100+'%"></i></div><small>'+esc(date.slice(8))+'</small></div>'}).join('');
  const income=[...rows.values()].reduce((n,x)=>n+x.income,0),expense=[...rows.values()].reduce((n,x)=>n+x.expense,0);
  const parts=[...expenses].filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]),sum=parts.reduce((n,x)=>n+x[1],0),colors=['#fb7185','#fbbf24','#38bdf8','#a78bfa','#34d399','#e879f9','#f97316'];let pos=0;
  const gradient=parts.map(([name,value],i)=>{const old=pos;pos+=value/sum*100;return colors[i%colors.length]+' '+old+'% '+pos+'%'}).join(',');
@@ -83,7 +83,7 @@ function dashboardAnalytics(){
  const totals=window.gproPersonalFinance?.totals;
  const monthly=Array.from({length:6},(_,i)=>{const d=new Date(year,mo-5+i,1),m=localDay(d).slice(0,7),t=totals?totals(l,m):{income:0,expense:0};return {month:m,label:d.toLocaleDateString('ru-RU',{month:'short'}),income:Number(t.income)||0,expense:Number(t.expense)||0}});
  const actual=monthly[5],profit=actual.income-actual.expense,previous=monthly[4],max=Math.max(1,...monthly.flatMap(x=>[x.income,x.expense]));
- const bars=monthly.map(x=>'<div class="gpro-chart-col gpro-chart-hover" tabindex="0" data-chart-label="'+esc(x.month)+'" data-chart-income="'+esc(money(x.income))+'" data-chart-expense="'+esc(money(x.expense))+'"><div class="gpro-chart-bars"><i class="gpro-chart-bar income" style="height:'+Math.max(x.income?3:0,Math.round(x.income/max*100))+'%"></i><i class="gpro-chart-bar expense" style="height:'+Math.max(x.expense?3:0,Math.round(x.expense/max*100))+'%"></i></div><span>'+esc(x.label)+'</span></div>').join('');
+ const bars=monthly.map(x=>'<div class="gpro-chart-col gpro-chart-hover" data-chart-label="'+esc(x.month)+'" data-chart-income="'+esc(money(x.income))+'" data-chart-expense="'+esc(money(x.expense))+'"><div class="gpro-chart-bars"><i class="gpro-chart-bar income" style="height:'+Math.max(x.income?3:0,Math.round(x.income/max*100))+'%"></i><i class="gpro-chart-bar expense" style="height:'+Math.max(x.expense?3:0,Math.round(x.expense/max*100))+'%"></i></div><span>'+esc(x.label)+'</span></div>').join('');
  const expenses=transactions.filter(x=>x.type==='expense'&&x.date?.slice(0,7)===month).reduce((map,x)=>{const key=x.category||'Без категории';map[key]=(map[key]||0)+(Number(x.amount)||0);return map},{});
  for(const x of inventory)if(x.soldAt?.slice(0,7)===month){const margin=(Number(x.sellPrice)||0)-(Number(x.buyPrice)||0)-(Number(x.buyCosts)||0)-(Number(x.sellCosts)||0);if(margin<0)expenses['Убытки от перепродажи']=(expenses['Убытки от перепродажи']||0)-margin}
  const categories=Object.entries(expenses).sort((a,b)=>b[1]-a[1]),expenseTotal=categories.reduce((n,x)=>n+x[1],0),palette=['#fb7185','#fbbf24','#38bdf8','#a78bfa','#34d399','#e879f9','#f97316'];
@@ -123,12 +123,13 @@ function deleteTask(key){const [scope,taskId]=key.split(':'),list=scope==='globa
 function bindTaskToggles(){document.querySelectorAll('#app [data-task-edit]').forEach(b=>b.onclick=()=>{const t=findTask(b.dataset.taskEdit);if(!t)return;const title=prompt('Название задачи',t.text);if(title===null)return;if(!title.trim()){alert('Название не может быть пустым');return}t.text=title.trim().slice(0,500);const description=prompt('Описание задачи (необязательно)',t.description||'');if(description!==null)t.description=description.slice(0,3000);t.updatedAt=new Date().toISOString();store();render()});document.querySelectorAll('#app [data-task-project]').forEach(el=>el.onchange=()=>{const [scope,taskId]=el.dataset.taskProject.split(':'),source=scope==='global'?state.tasks:state.projects.find(p=>p.id===scope)?.tasks,dest=el.value==='global'?state.tasks:state.projects.find(p=>p.id===el.value)?.tasks;if(!source||!dest||source===dest)return;const idx=source.findIndex(t=>t.id===taskId);if(idx<0)return;dest.push(source.splice(idx,1)[0]);store();render()});document.querySelectorAll('#app [data-task-delete]').forEach(b=>b.onclick=()=>deleteTask(b.dataset.taskDelete));document.querySelectorAll('#app [data-task-toggle]').forEach(i=>i.onchange=()=>{const t=findTask(i.dataset.taskToggle);if(t){t.done=i.checked;t.completedAt=t.done?new Date().toISOString():null;store();render()}});for(const [attr,key] of [['data-task-priority','priority'],['data-task-date','dueDate']])document.querySelectorAll('#app ['+attr+']').forEach(el=>el.onchange=()=>{const t=findTask(el.getAttribute(attr));if(t){if(key==='dueDate'&&el.value&&!/^\d{4}-\d{2}-\d{2}$/.test(el.value))return;t[key]=el.value;t.updatedAt=new Date().toISOString();store();render()}})}
 let chartTip;
 function bindChartTooltips(){
- const columns=document.querySelectorAll('#app .gpro-chart-hover');
+ const columns=document.querySelectorAll('#app .gpro-chart-hover .gpro-chart-bar, #app .gpro-chart-hover .gpro-daily-pair i');
  if(!columns.length){if(chartTip)chartTip.hidden=true;return}
  if(!chartTip){chartTip=document.createElement('div');chartTip.className='gpro-chart-tooltip';chartTip.hidden=true;chartTip.setAttribute('role','tooltip');document.body.appendChild(chartTip)}
  let active=null;
  function show(el,x,y){
-   if(active!==el){active=el;chartTip.innerHTML='<div class="gpro-tip-date"></div><div class="gpro-tip-row"><i class="income"></i><span>Доходы</span><b class="gpro-positive"></b></div><div class="gpro-tip-row"><i class="expense"></i><span>Расходы</span><b class="gpro-negative"></b></div>';chartTip.querySelector('.gpro-tip-date').textContent=el.dataset.chartLabel;chartTip.querySelector('.gpro-positive').textContent=el.dataset.chartIncome;chartTip.querySelector('.gpro-negative').textContent=el.dataset.chartExpense}
+   const column=el.closest('.gpro-chart-hover');if(!column)return;
+   if(active!==el){active=el;chartTip.innerHTML='<div class="gpro-tip-date"></div><div class="gpro-tip-row"><i class="income"></i><span>Доходы</span><b class="gpro-positive"></b></div><div class="gpro-tip-row"><i class="expense"></i><span>Расходы</span><b class="gpro-negative"></b></div>';chartTip.querySelector('.gpro-tip-date').textContent=column.dataset.chartLabel;chartTip.querySelector('.gpro-positive').textContent=column.dataset.chartIncome;chartTip.querySelector('.gpro-negative').textContent=column.dataset.chartExpense}
    chartTip.hidden=false;
    const rect=chartTip.getBoundingClientRect(),pad=12;
    const left=Math.max(pad,Math.min(x+16,window.innerWidth-rect.width-pad));
@@ -137,6 +138,7 @@ function bindChartTooltips(){
  }
  function hide(){active=null;chartTip.hidden=true}
  columns.forEach(el=>{
+   el.tabIndex=0;
    el.addEventListener('pointerenter',e=>show(el,e.clientX,e.clientY));
    el.addEventListener('pointermove',e=>show(el,e.clientX,e.clientY),{passive:true});
    el.addEventListener('pointerleave',hide);
