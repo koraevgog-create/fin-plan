@@ -579,3 +579,21 @@ html[data-theme="light"] .gpro-tip-row span{color:#526b86}
 html[data-theme="light"] .gpro-chart-tooltip .gpro-positive{color:#078968}
 html[data-theme="light"] .gpro-chart-tooltip .gpro-negative{color:#c83c58}
 @media(prefers-reduced-motion:reduce){.gpro-chart-hover{transition:none}}
+
+
+/* Tooltip hit areas: only painted chart bars, never the empty plot. */
+.gpro-chart-hover{cursor:default}
+.gpro-chart-hover:hover,.gpro-chart-hover:focus-visible{filter:none;outline:none}
+.gpro-chart-hover .gpro-chart-bar,
+.gpro-chart-hover .gpro-daily-pair i{cursor:crosshair;outline-offset:3px;transition:filter .12s ease}
+.gpro-chart-hover .gpro-chart-bar:hover,
+.gpro-chart-hover .gpro-chart-bar:focus-visible,
+.gpro-chart-hover .gpro-daily-pair i:hover,
+.gpro-chart-hover .gpro-daily-pair i:focus-visible{filter:brightness(1.28)}
+.gpro-chart-hover .gpro-chart-bar:focus-visible,
+.gpro-chart-hover .gpro-daily-pair i:focus-visible{outline:2px solid #38bdf8;border-radius:4px}
+.gpro-chart-hover .gpro-chart-bars,
+.gpro-chart-hover .gpro-daily-pair{pointer-events:none}
+.gpro-chart-hover .gpro-chart-bar,
+.gpro-chart-hover .gpro-daily-pair i{pointer-events:auto}
+@media(prefers-reduced-motion:reduce){.gpro-chart-hover .gpro-chart-bar,.gpro-chart-hover .gpro-daily-pair i{transition:none}}
