@@ -1,6 +1,6 @@
 // GPRO Command Center: load the current dashboard module without stale browser cache.
 // Production deployment is managed by the allowlisted FTPS workflow.
-const BUILD = '20261024-11';
+const BUILD = '20261025-1';
 try {
   if (location.hostname.endsWith('.beget.tech') && window.gproServerSync) {
     await window.gproServerSync.start();
