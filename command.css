@@ -419,3 +419,77 @@ html[data-theme="light"] #app .empty{background:#f8fbff}
 .pf-root .table input[type=number]{width:130px}
 @media(max-width:1100px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.pf-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.pf-period button{flex:1 1 auto}.pf-stat{padding:12px}.pf-stat h2{font-size:20px}.pf-tabs button{flex:1 1 auto}}
+
+
+/* GPRO Visual System 2.0 — semantic colour, restrained premium dashboard */
+:root{--gpro-positive:#34d399;--gpro-negative:#fb7185;--gpro-goal:#fbbf24;--gpro-strategy:#a78bfa;--gpro-info:#38bdf8;--gpro-surface:#111e33;--gpro-softshadow:0 12px 34px #00000024}
+body{background:radial-gradient(ellipse at 84% -9%,#153d654d,transparent 40%),radial-gradient(ellipse at 13% 70%,#15244b40,transparent 40%),var(--bg)}
+aside{background:linear-gradient(180deg,#0c1930,#0a1323 68%);border-right-color:#243d5a}
+.logo{color:#5de5ff;text-shadow:0 0 25px #39c8ff33}
+nav button{transition:background .18s,border-color .18s,color .18s;position:relative}
+nav button.active{background:linear-gradient(90deg,#16466b,#172a43);border-color:#2b7092;color:#f2fbff;box-shadow:inset 3px 0 0 var(--gpro-info)}
+nav button:hover{border-color:#47779a}
+.card{background:linear-gradient(150deg,#172941 0%,#101c30 68%,#101a2b 100%);border-color:#2a3c55;box-shadow:var(--gpro-softshadow);transition:border-color .18s,box-shadow .18s,transform .18s}
+.card:hover{border-color:#3b5876}
+h1,h2,h3{color:#f2f7ff}h1{letter-spacing:-1.4px}h2{letter-spacing:-.35px}
+button{transition:background .17s,border-color .17s,transform .17s,box-shadow .17s}
+button:hover{transform:translateY(-1px)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gpro-info);outline-offset:2px}
+button.primary,.primary{background:linear-gradient(110deg,#176fc7,#2d92d7);border-color:#3b9ce0;box-shadow:0 4px 15px #0e76d42a}
+button.primary:hover{background:linear-gradient(110deg,#2384df,#38a8ee)}
+input,select,textarea{transition:border-color .18s,box-shadow .18s}
+input:focus,select:focus,textarea:focus{border-color:#38bdf8;box-shadow:0 0 0 3px #38bdf81a}
+.tabs button.active{background:#164e7e;box-shadow:inset 0 -2px 0 #52c7ff}
+table tbody tr{transition:background .15s}table tbody tr:hover{background:#52baff0b}
+th{background:#13243a66;font-weight:650}
+.gpro-kpi{position:relative;overflow:hidden;border-top:2px solid var(--gpro-info);min-height:115px}
+.gpro-kpi:before{content:"";position:absolute;inset:0 0 auto auto;width:105px;height:105px;pointer-events:none;background:radial-gradient(circle,var(--kpi-glow,#38bdf819),transparent 70%)}
+.gpro-kpi h2{font-size:clamp(20px,2.2vw,31px);margin:13px 0 4px;font-variant-numeric:tabular-nums;color:var(--kpi-color,#62d9ff)}
+.gpro-kpi-income{--kpi-color:var(--gpro-positive);--kpi-glow:#34d39930;border-top-color:var(--gpro-positive)}
+.gpro-kpi-expense{--kpi-color:var(--gpro-negative);--kpi-glow:#fb718530;border-top-color:var(--gpro-negative)}
+.gpro-kpi-goal{--kpi-color:var(--gpro-goal);--kpi-glow:#fbbf2430;border-top-color:var(--gpro-goal)}
+.gpro-kpi-neutral{--kpi-color:var(--gpro-info)}
+.project.priority-main{border-left:4px solid var(--gpro-info)}
+.project.priority-side{border-left:4px solid var(--gpro-strategy)}
+.project.priority-queue{border-left:4px solid #50647f}
+.project.priority-main .priority-label{color:#77dfff}
+.project.priority-side .priority-label{color:#c5afff}
+.project.priority-queue .priority-label{color:#91a2b9}
+.pill.status-active{background:#143e37;color:#73efc2}
+.pill.status-test,.pill.status-research{background:#392c4f;color:#cdb6ff}
+.pill.status-idea{background:#253148;color:#b2c5df}
+.pill.status-paused{background:#4a3425;color:#ffd18c}
+.pill.status-archived{background:#323943;color:#b2b8c4}
+.bar{background:#24354c}.bar i{background:linear-gradient(90deg,#278bf2,#47dbd4)}
+.pf-stat{position:relative;overflow:hidden;border-top:2px solid #4a86c2}
+.pf-stat h2{font-variant-numeric:tabular-nums;font-size:clamp(20px,2vw,29px)}
+.pf-kpis>.pf-stat:nth-child(3n+1){border-top-color:var(--gpro-positive)}
+.pf-kpis>.pf-stat:nth-child(3n+1) h2{color:var(--gpro-positive)}
+.pf-kpis>.pf-stat:nth-child(3n+2){border-top-color:var(--gpro-negative)}
+.pf-kpis>.pf-stat:nth-child(3n+2) h2{color:var(--gpro-negative)}
+.pf-kpis>.pf-stat:nth-child(3n+3){border-top-color:var(--gpro-info)}
+.pf-kpis>.pf-stat:nth-child(3n+3) h2{color:var(--gpro-info)}
+.pf-negative{color:var(--gpro-negative)!important}
+.success{color:var(--gpro-positive)}.warning{color:var(--gpro-goal)}
+/* Bright theme shares exactly the same semantic meanings. */
+html[data-theme="light"]{--gpro-surface:#fff;--gpro-softshadow:0 12px 30px #27578a13}
+html[data-theme="light"] body{background:radial-gradient(ellipse at 88% 0,#c9e5ff77,transparent 43%),#f1f5fb}
+html[data-theme="light"] aside{background:linear-gradient(180deg,#fff,#f8fbff);border-color:#d9e4f1}
+html[data-theme="light"] .card{background:linear-gradient(150deg,#fff,#f8fbff);border-color:#d9e5f3;box-shadow:var(--gpro-softshadow)}
+html[data-theme="light"] h1,html[data-theme="light"] h2,html[data-theme="light"] h3{color:#172d4a}
+html[data-theme="light"] nav button.active{background:#e5f3ff;color:#125b9c;border-color:#b3d8f4;box-shadow:inset 3px 0 0 #168bce}
+html[data-theme="light"] .gpro-kpi-income{--kpi-color:#078968}
+html[data-theme="light"] .gpro-kpi-expense{--kpi-color:#ce4058}
+html[data-theme="light"] .gpro-kpi-goal{--kpi-color:#a9690a}
+html[data-theme="light"] .gpro-kpi-neutral{--kpi-color:#176da8}
+html[data-theme="light"] .pf-kpis>.pf-stat:nth-child(3n+1) h2{color:#078968}
+html[data-theme="light"] .pf-kpis>.pf-stat:nth-child(3n+2) h2{color:#ce4058}
+html[data-theme="light"] .pf-kpis>.pf-stat:nth-child(3n+3) h2{color:#176da8}
+html[data-theme="light"] .pill.status-active{background:#ddf8eb;color:#087c59}
+html[data-theme="light"] .pill.status-test,html[data-theme="light"] .pill.status-research{background:#efe7ff;color:#6e4aaf}
+html[data-theme="light"] .pill.status-idea{background:#eaf0f8;color:#526783}
+html[data-theme="light"] .pill.status-paused{background:#fff0d9;color:#9e650d}
+html[data-theme="light"] .pill.status-archived{background:#eceef1;color:#667182}
+html[data-theme="light"] th{background:#eef4fc}
+html[data-theme="light"] table tbody tr:hover{background:#e9f5ff}
+@media(prefers-reduced-motion:reduce){.card,button,nav button,input,select,textarea,table tbody tr{transition:none!important}button:hover,.project:hover{transform:none!important}}
