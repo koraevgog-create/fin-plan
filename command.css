@@ -493,3 +493,38 @@ html[data-theme="light"] .pill.status-archived{background:#eceef1;color:#667182}
 html[data-theme="light"] th{background:#eef4fc}
 html[data-theme="light"] table tbody tr:hover{background:#e9f5ff}
 @media(prefers-reduced-motion:reduce){.card,button,nav button,input,select,textarea,table tbody tr{transition:none!important}button:hover,.project:hover{transform:none!important}}
+
+
+/* GPRO Analytics Dashboard 2.1 */
+.gpro-analytics{display:grid;gap:17px;margin:0 0 28px}
+.gpro-dashboard-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.gpro-dashboard-heading h2{font-size:24px;margin:5px 0 4px}
+.gpro-dashboard-heading p{margin:0}
+.gpro-analytics-kpis .card{min-height:126px}
+.gpro-analytics-panels{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,1fr);gap:17px}
+.gpro-analytics-panels .card{min-width:0}
+.gpro-chart-panel h3,.gpro-breakdown h3{margin:0 0 5px}
+.gpro-legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:11px}
+.gpro-legend span{display:flex;align-items:center;gap:6px}
+.gpro-legend i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.gpro-legend .income,.gpro-chart-bar.income{background:linear-gradient(180deg,#4ae8bc,#138d82)}
+.gpro-legend .expense,.gpro-chart-bar.expense{background:linear-gradient(180deg,#ff8b9d,#cb4c76)}
+.gpro-chart{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px;height:230px;margin:25px 0 8px;padding:0 4px 0;background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),#7c97b31a 25%);border-bottom:1px solid #59728c48}
+.gpro-chart-col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;min-width:0;height:100%;gap:7px}
+.gpro-chart-col>span{font-size:11px;color:var(--muted);white-space:nowrap}
+.gpro-chart-bars{display:flex;align-items:flex-end;justify-content:center;gap:5px;width:100%;height:calc(100% - 25px)}
+.gpro-chart-bar{display:block;width:clamp(7px,24%,26px);min-height:0;border-radius:6px 6px 2px 2px;transition:height .25s ease}
+.gpro-breakdown-row{margin:18px 0}.gpro-breakdown-row .row{font-size:12px;gap:10px}.gpro-breakdown-row .row span{color:var(--muted);overflow:hidden;text-overflow:ellipsis}.gpro-breakdown-row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.gpro-mini-track{height:7px;background:#26384d;border-radius:10px;margin-top:9px;overflow:hidden}
+.gpro-mini-track i{display:block;height:100%;border-radius:10px}
+.gpro-project-result{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);padding:13px 0;font-size:12px}
+.gpro-project-result:last-child{border-bottom:0}.gpro-result-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gpro-project-result b{white-space:nowrap;font-variant-numeric:tabular-nums}
+.gpro-project-dot{height:9px;width:9px;flex:0 0 9px;border-radius:50%;background:#8fa2bc}.gpro-project-dot.main{background:var(--gpro-info)}.gpro-project-dot.side{background:var(--gpro-strategy)}
+.gpro-positive{color:var(--gpro-positive)}.gpro-negative{color:var(--gpro-negative)}
+.gpro-insight{background:linear-gradient(145deg,#1a2b4b,#101b30)}.gpro-insight-number{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:18px;margin-top:20px;border-top:1px solid var(--line);font-size:12px}.gpro-insight-number span{color:var(--muted)}.gpro-insight-number b{font-size:18px}
+html[data-theme="light"] .gpro-mini-track{background:#e6edf7}
+html[data-theme="light"] .gpro-insight{background:linear-gradient(145deg,#fff,#f4f8ff)}
+html[data-theme="light"] .gpro-chart{background:repeating-linear-gradient(to top,transparent 0,transparent calc(25% - 1px),#a1b9d226 25%);border-bottom-color:#cbd9e9}
+html[data-theme="light"] .gpro-positive{color:#078968}html[data-theme="light"] .gpro-negative{color:#ce4058}
+@media(max-width:1150px){.gpro-analytics-panels{grid-template-columns:1fr}}
+@media(max-width:680px){.gpro-analytics-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.gpro-analytics-kpis .card{padding:14px;min-height:105px}.gpro-chart{gap:6px;height:195px}.gpro-chart-bars{gap:3px}.gpro-analytics-panels{gap:12px}.gpro-dashboard-heading h2{font-size:21px}}
