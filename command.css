@@ -557,3 +557,25 @@ html[data-theme="light"] .gpro-positive{color:#078968}html[data-theme="light"] .
 html[data-theme="light"] .gpro-donut>div{background:#fff}
 @media(max-width:800px){.gpro-capital-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.gpro-donut{width:150px;height:150px;flex-basis:150px}.gpro-donut>div{width:104px;height:104px}}
 @media(max-width:500px){.gpro-capital-row b{font-size:16px}.gpro-period-label{order:5;width:100%}.gpro-daily-chart{height:175px}}
+
+
+/* Immediate premium chart tooltip — no browser-native title delay */
+.gpro-chart-hover{cursor:crosshair;outline-offset:3px;transition:filter .12s ease}
+.gpro-chart-hover:hover,.gpro-chart-hover:focus-visible{filter:brightness(1.23)}
+.gpro-chart-hover:focus-visible{outline:2px solid #38bdf8;border-radius:5px}
+.gpro-chart-tooltip{position:fixed;z-index:99999;pointer-events:none;width:218px;max-width:calc(100vw - 24px);padding:13px 14px;border-radius:13px;border:1px solid #3c6489;background:linear-gradient(145deg,#182e4a,#0e1b30);box-shadow:0 14px 45px #0008,0 0 0 1px #8fd5ff0b;color:#eaf4ff;font-size:12px;line-height:1.45;backdrop-filter:blur(12px)}
+.gpro-chart-tooltip[hidden]{display:none!important}
+.gpro-tip-date{font-size:12px;font-weight:750;color:#d9eaff;letter-spacing:.2px;margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid #ffffff20}
+.gpro-tip-row{display:flex;align-items:center;gap:8px;margin:7px 0}
+.gpro-tip-row i{height:9px;width:9px;border-radius:3px;flex:0 0 9px}
+.gpro-tip-row i.income{background:#34d399;box-shadow:0 0 9px #34d39945}
+.gpro-tip-row i.expense{background:#fb7185;box-shadow:0 0 9px #fb718545}
+.gpro-tip-row span{color:#b4c7dc;flex:1}
+.gpro-tip-row b{font-variant-numeric:tabular-nums;font-weight:750;white-space:nowrap}
+.gpro-chart-tooltip .gpro-positive{color:#55edbd}.gpro-chart-tooltip .gpro-negative{color:#ff91a1}
+html[data-theme="light"] .gpro-chart-tooltip{background:linear-gradient(145deg,#fff,#eef6ff);border-color:#bed7ed;color:#172d4a;box-shadow:0 12px 34px #25456638}
+html[data-theme="light"] .gpro-tip-date{color:#1c3b5d;border-bottom-color:#d5e2ef}
+html[data-theme="light"] .gpro-tip-row span{color:#526b86}
+html[data-theme="light"] .gpro-chart-tooltip .gpro-positive{color:#078968}
+html[data-theme="light"] .gpro-chart-tooltip .gpro-negative{color:#c83c58}
+@media(prefers-reduced-motion:reduce){.gpro-chart-hover{transition:none}}
