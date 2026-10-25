@@ -597,3 +597,15 @@ html[data-theme="light"] .gpro-chart-tooltip .gpro-negative{color:#c83c58}
 .gpro-chart-hover .gpro-chart-bar,
 .gpro-chart-hover .gpro-daily-pair i{pointer-events:auto}
 @media(prefers-reduced-motion:reduce){.gpro-chart-hover .gpro-chart-bar,.gpro-chart-hover .gpro-daily-pair i{transition:none}}
+
+
+/* Analytics 3.3 — transaction drill-down */
+.gpro-detail-panel{margin-top:16px;scroll-margin-top:85px}
+.gpro-detail-panel>.row{margin-bottom:16px}
+.gpro-detail-entry{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 4px;border-top:1px solid var(--line)}
+.gpro-detail-entry span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.gpro-detail-entry strong{font-size:13px;overflow-wrap:anywhere}
+.gpro-detail-entry small{font-size:11px;color:var(--muted)}
+.gpro-detail-entry b{font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.gpro-chart-hover .gpro-chart-bar,.gpro-chart-hover .gpro-daily-pair i{cursor:pointer}
+@media(max-width:480px){.gpro-detail-entry{gap:8px}.gpro-detail-entry b{font-size:12px}}
