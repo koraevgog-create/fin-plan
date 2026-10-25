@@ -609,3 +609,11 @@ html[data-theme="light"] .gpro-chart-tooltip .gpro-negative{color:#c83c58}
 .gpro-detail-entry b{font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .gpro-chart-hover .gpro-chart-bar,.gpro-chart-hover .gpro-daily-pair i{cursor:pointer}
 @media(max-width:480px){.gpro-detail-entry{gap:8px}.gpro-detail-entry b{font-size:12px}}
+
+
+/* Analytics 3.4: interactive spending categories */
+.gpro-donut-button{width:100%;padding:7px 9px;margin:3px 0;border:1px solid transparent;border-radius:9px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background .12s ease,border-color .12s ease}
+.gpro-donut-button:hover,.gpro-donut-button:focus-visible{background:#38bdf817;border-color:#38bdf850;outline:none}
+.gpro-donut-button span{min-width:0;overflow-wrap:anywhere}
+.gpro-donut-button b{font-variant-numeric:tabular-nums}
+html[data-theme="light"] .gpro-donut-button:hover,html[data-theme="light"] .gpro-donut-button:focus-visible{background:#d7edff;border-color:#94c7e9}
