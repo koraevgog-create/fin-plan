@@ -617,3 +617,20 @@ html[data-theme="light"] .gpro-chart-tooltip .gpro-negative{color:#c83c58}
 .gpro-donut-button span{min-width:0;overflow-wrap:anywhere}
 .gpro-donut-button b{font-variant-numeric:tabular-nums}
 html[data-theme="light"] .gpro-donut-button:hover,html[data-theme="light"] .gpro-donut-button:focus-visible{background:#d7edff;border-color:#94c7e9}
+
+
+/* Analytics 3.5 — period-over-period expense intelligence */
+.gpro-compare-card{margin-top:16px}
+.gpro-compare-card>.row{align-items:flex-start;gap:14px}
+.gpro-compare-summary{display:flex;flex-wrap:wrap;gap:12px;margin:16px 0}
+.gpro-compare-summary span{display:flex;flex-direction:column;gap:6px;padding:12px 16px;min-width:135px;flex:1;background:#38bdf80b;border:1px solid var(--line);border-radius:11px;font-size:11px;color:var(--muted)}
+.gpro-compare-summary b{font-size:17px;color:var(--text);font-variant-numeric:tabular-nums}
+.gpro-compare-list{border-top:1px solid var(--line)}
+.gpro-compare-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.gpro-compare-row span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.gpro-compare-row span b{font-size:13px;overflow-wrap:anywhere}
+.gpro-compare-row small{font-size:11px;color:var(--muted)}
+.gpro-compare-row strong{font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.gpro-compare-hint{padding:14px 16px;border-radius:11px;background:#38bdf811;border:1px solid #38bdf830;color:var(--text);font-size:12px;line-height:1.6;margin-top:16px}
+html[data-theme="light"] .gpro-compare-hint{background:#eaf6ff;border-color:#bcdff5}
+@media(max-width:480px){.gpro-compare-summary span{min-width:95px;padding:10px}.gpro-compare-summary b{font-size:14px}.gpro-compare-row strong{font-size:12px}}
